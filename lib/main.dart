@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(375, 812),
+      designSize: const Size(412, 917),
       minTextAdapt: true,
       builder: (_, __) {
         return GetMaterialApp(
@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
           ),
 
           /// 🚀 ROUTING (GetX)
-          initialRoute: Routes.addList,
+          initialRoute: Routes.login,
           getPages: AppPages.routes,
         );
       },

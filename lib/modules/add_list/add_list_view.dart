@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../widgets/app_drawer.dart';
-import '../widgets/app_header.dart';
-import '../widgets/bottom_nav.dart';
-import '../widgets/suggestion_box.dart';
+import '../../core/widgets/app_drawer.dart';
+import '../../core/widgets/app_header.dart';
+import '../../core/widgets/bottom_nav.dart';
+import '../../core/widgets/suggestion_box.dart';
 import 'add_list_controller.dart';
 
 class AddListView extends GetView<AddListController> {
   AddListView({super.key});
 
-  final GlobalKey<ScaffoldState> _scaffoldKey =
-  GlobalKey<ScaffoldState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +34,13 @@ class AddListView extends GetView<AddListController> {
               },
             ),
 
-
             Expanded(
               child: Stack(
                 children: [
                   /// ================= MAIN CONTENT =================
                   SingleChildScrollView(
                     keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: EdgeInsets.all(16.w),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,28 +131,28 @@ class AddListView extends GetView<AddListController> {
                         /// ================= FORM (ALWAYS VISIBLE) =================
                         const _AddToListForm(),
 
-
                         120.verticalSpace,
                       ],
                     ),
                   ),
 
                   /// ================= SEARCH DROPDOWN =================
-                Obx(() {
-                  if (!controller.isSearching.value) {
-                    return const SizedBox();
-                  }
+                  Obx(() {
+                    if (!controller.isSearching.value) {
+                      return const SizedBox();
+                    }
 
-                  return CompositedTransformFollower(
-                    link: searchLink,
-                    showWhenUnlinked: false,
-                    offset: Offset(0, 44.h), // search bar height
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width - 32.w, // 👈 FIX
-                      child: const SuggestionBox(),
-                    ),
-                  );
-                }),
+                    return CompositedTransformFollower(
+                      link: searchLink,
+                      showWhenUnlinked: false,
+                      offset: Offset(0, 44.h), // search bar height
+                      child: SizedBox(
+                        width:
+                            MediaQuery.of(context).size.width - 32.w, // 👈 FIX
+                        child: const SuggestionBox(),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -164,9 +162,6 @@ class AddListView extends GetView<AddListController> {
     );
   }
 }
-
-
-
 
 class _Tag extends StatelessWidget {
   final String text;
@@ -180,13 +175,11 @@ class _Tag extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(6.r),
       ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 10.sp),
-      ),
+      child: Text(text, style: TextStyle(fontSize: 10.sp)),
     );
   }
 }
+
 class _SearchBar extends GetView<AddListController> {
   const _SearchBar();
 
@@ -202,9 +195,7 @@ class _SearchBar extends GetView<AddListController> {
           Container(
             width: 44.w,
             height: 44.h,
-            decoration: BoxDecoration(
-              color: const Color(0xFF0D2EBE),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF0D2EBE)),
             child: Center(
               child: Image.asset(
                 'assets/search_icon.png',
@@ -223,8 +214,7 @@ class _SearchBar extends GetView<AddListController> {
                 hintText: 'search product...',
                 border: InputBorder.none,
                 isCollapsed: true,
-                contentPadding:
-                EdgeInsets.symmetric(horizontal: 12.w),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12.w),
               ),
             ),
           ),
@@ -256,9 +246,7 @@ class _AddToListForm extends StatelessWidget {
               backgroundColor: const Color(0xFF0D2EBE),
 
               // 👇 force rectangular shape
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.zero,
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
             ),
             onPressed: () {},
             child: const Text(
@@ -267,21 +255,16 @@ class _AddToListForm extends StatelessWidget {
             ),
           ),
         ),
-
       ],
     );
   }
 }
 
-
 class _InputRow extends StatelessWidget {
   final String label;
   final String hint;
 
-  const _InputRow({
-    required this.label,
-    required this.hint,
-  });
+  const _InputRow({required this.label, required this.hint});
 
   bool get _isLongLabel => label.length > 10;
 
@@ -328,12 +311,11 @@ class _InputRow extends StatelessWidget {
 
                   // 👇 THIS is what moves hint text
                   contentPadding: EdgeInsets.only(
-                    top: 8.h,     // increase to move down
+                    top: 8.h, // increase to move down
                     bottom: 6.h,
                   ),
                 ),
               ),
-
             ),
           ),
         ],
@@ -341,6 +323,3 @@ class _InputRow extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -1,13 +1,11 @@
+import 'package:drug/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
 
-  const AppBottomNav({
-    super.key,
-    required this.currentIndex,
-  });
+  const AppBottomNav({super.key, required this.currentIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -30,16 +28,16 @@ class AppBottomNav extends StatelessWidget {
 
           switch (index) {
             case 0:
-              Get.offAllNamed('/dashboard');
+              Get.offAllNamed(Routes.dashboard);
               break;
             case 1:
-              Get.offAllNamed('/orders');
+              Get.offAllNamed(Routes.order);
               break;
             case 2:
-              Get.offAllNamed('/add-list');
+              Get.offAllNamed(Routes.addList);
               break;
             case 3:
-              Get.offAllNamed('/all-list');
+              Get.offAllNamed(Routes.allList);
               break;
           }
         },
@@ -57,10 +55,7 @@ class AppBottomNav extends StatelessWidget {
             icon: Icon(Icons.add_circle_outline),
             label: 'Add-List',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'All-List',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'All-List'),
         ],
       ),
     );
