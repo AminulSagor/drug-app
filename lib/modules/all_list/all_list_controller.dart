@@ -1,88 +1,139 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../core/models/drug_item_model.dart';
+
+import '../../core/network/api_exception.dart';
+import '../add_list/services/product_api.dart';
+import 'models/listed_item_model.dart';
+import 'services/all_list_api.dart';
 import 'widgets/edit_drug_dialog.dart';
 
+enum SaleModeOption { sale, pSale }
+
+enum EditAction { update, stockOut }
+
 class AllListController extends GetxController {
+  AllListController({AllListApi? api, ProductApi? productApi})
+    : _api = api ?? AllListApi(),
+      _productApi = productApi ?? ProductApi();
+
+  final AllListApi _api;
+  final ProductApi _productApi;
+
   /// UI
   final searchCtrl = TextEditingController();
 
   /// Loading
   final isLoading = false.obs;
 
-  /// Current page items ONLY
-  final items = <DrugItemModel>[].obs;
+  /// bill mode loading (dialog)
+  final isBillModeLoading = false.obs;
+
+  /// edit/update loading (dialog)
+  final isEditLoading = false.obs;
+
+  /// Data
+  final items = <ListedItemModel>[].obs;
 
   /// Query
   final searchQuery = ''.obs;
 
-  /// Pagination
-  final int pageSize = 20;
-  final int totalItems = 49; // mock backend total
+  /// Pagination (from API)
   final currentPage = 1.obs;
+  final lastPage = 1.obs;
+  final perPage = 20.obs;
+  final totalItems = 0.obs;
+  final from = 0.obs;
+  final to = 0.obs;
 
-  int get totalPages => (totalItems / pageSize).ceil();
+  int get totalPages => lastPage.value;
+  int get showingFrom => from.value;
+  int get showingTo => to.value;
 
-  int get showingFrom {
-    if (items.isEmpty) return 0;
-    return ((currentPage.value - 1) * pageSize) + 1;
-  }
+  bool get isSearching => searchQuery.value.trim().isNotEmpty;
 
-  int get showingTo {
-    final to = currentPage.value * pageSize;
-    return to > totalItems ? totalItems : to;
-  }
+  /// ===== Bill Mode State =====
+  final currentBillMode = RxnInt(); // 0/1
+  final selectedSaleMode = SaleModeOption.sale.obs;
 
   /// ===================== EDIT STATE =====================
   final editSaleCtrl = TextEditingController();
   final editPSaleCtrl = TextEditingController();
   final editOfferCtrl = TextEditingController();
   final editQtyCtrl = TextEditingController();
+  final editingItem = Rxn<ListedItemModel>();
 
-  final editingItem = Rxn<DrugItemModel>();
+  Timer? _searchDebounce;
 
-  /// ===================== INIT =====================
+  final editAction = Rxn<EditAction>(); // which button is loading
+
   @override
   void onInit() {
     super.onInit();
-    fetchPage(page: 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadCurrentBillMode();
+      await fetchPage(page: 1);
+    });
   }
 
-  /// ===================== MOCK API =====================
+  /// ===================== STOCK LIST =====================
   Future<void> fetchPage({required int page}) async {
     isLoading.value = true;
+    try {
+      final res = await _api.getAllCurrentStock(page: page);
+      final cs = res.currentStock;
 
-    // simulate network latency
-    await Future.delayed(const Duration(milliseconds: 800));
+      items.assignAll(cs.data);
 
-    final startIndex = (page - 1) * pageSize;
-    final endIndex = (startIndex + pageSize) > totalItems
-        ? totalItems
-        : (startIndex + pageSize);
+      currentPage.value = cs.currentPage;
+      lastPage.value = cs.lastPage;
+      perPage.value = cs.perPage;
 
-    final List<DrugItemModel> pageData = [];
-
-    for (int i = startIndex; i < endIndex; i++) {
-      final base = _baseProducts[i % _baseProducts.length];
-
-      pageData.add(
-        base.copyWith(
-          id: 'drug_${i + 1}',
-          quantity: (i % 2 == 0) ? 0 : ((i % 5) + 3),
-        ),
-      );
+      totalItems.value = cs.total;
+      from.value = cs.from;
+      to.value = cs.to;
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } finally {
+      isLoading.value = false;
     }
-
-    items.assignAll(pageData);
-    currentPage.value = page;
-    isLoading.value = false;
   }
 
   /// ===================== SEARCH =====================
   void onSearchChanged(String v) {
     searchQuery.value = v;
-    fetchPage(page: 1); // reset pagination on search
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 450), () async {
+      await _searchNowOrPaginate();
+    });
+  }
+
+  Future<void> _searchNowOrPaginate() async {
+    final q = searchQuery.value.trim();
+
+    if (q.isEmpty) {
+      await fetchPage(page: 1);
+      return;
+    }
+
+    isLoading.value = true;
+    try {
+      final results = await _api.searchCurrentProduct(query: q);
+      items.assignAll(results);
+
+      // fake pagination while searching
+      currentPage.value = 1;
+      lastPage.value = 1;
+      perPage.value = results.length;
+      totalItems.value = results.length;
+      from.value = results.isEmpty ? 0 : 1;
+      to.value = results.length;
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void clearSearch() {
@@ -93,61 +144,217 @@ class AllListController extends GetxController {
 
   /// ===================== PAGINATION =====================
   void nextPage() {
+    if (isSearching) return;
     if (currentPage.value < totalPages) {
       fetchPage(page: currentPage.value + 1);
     }
   }
 
   void prevPage() {
+    if (isSearching) return;
     if (currentPage.value > 1) {
       fetchPage(page: currentPage.value - 1);
     }
   }
 
-  void goToPage(int page) {
-    if (page < 1 || page > totalPages) return;
-    fetchPage(page: page);
+  /// ===================== BILL MODE =====================
+  Future<void> _loadCurrentBillMode() async {
+    await _runBlocking(isBillModeLoading, () async {
+      final res = await _api.getCurrentBillMode();
+      final mode = res.billMode.billMode; // 0/1
+      currentBillMode.value = mode;
+      selectedSaleMode.value = (mode == 1)
+          ? SaleModeOption.pSale
+          : SaleModeOption.sale;
+    });
   }
 
-  /// ===================== ACTION =====================
-  void onEditItem(DrugItemModel item) {
+  Future<void> changeBillMode(SaleModeOption option) async {
+    final next = (option == SaleModeOption.pSale) ? 1 : 0;
+    if (currentBillMode.value == next) return;
+
+    await _runBlocking(isBillModeLoading, () async {
+      final res = await _api.updateBillMode(billMode: next);
+      currentBillMode.value = next;
+      selectedSaleMode.value = option;
+
+      // ✅ refetch list again after bill mode update
+      await _refreshCurrentList();
+
+      if (res.message.trim().isNotEmpty) {
+        Get.snackbar('Bill Mode', res.message);
+      }
+    });
+  }
+
+  /// ===================== EDIT / UPDATE STOCK =====================
+  void onEditItem(ListedItemModel item) {
     editingItem.value = item;
 
-    editSaleCtrl.text = item.sale.toString();
-    editPSaleCtrl.text = item.pSale.toString();
-    editOfferCtrl.text = item.offer.toString();
-    editQtyCtrl.text = item.quantity.toString();
+    // prefill fields from current values
+    editSaleCtrl.text = (item.currentStock?.discountPrice ?? 0).toString();
+    editPSaleCtrl.text = (item.currentStock?.peakHourPrice ?? 0).toString();
+    editOfferCtrl.text = (item.offer).toString();
+
+    // NOTE: you didn't have qty in model; using stockAlert as best guess.
+    editQtyCtrl.text = '${item.currentStock?.stockAlert ?? 0}';
 
     Get.dialog(const EditDrugDialog(), barrierDismissible: true);
   }
 
-  void markStockOut() {
-    editQtyCtrl.text = '0';
-  }
+  Future<void> onPressUpdate() async {
+    final item = editingItem.value;
+    if (item == null) return;
+    if (isEditLoading.value) return;
 
-  void updateItem() {
-    final old = editingItem.value;
-    if (old == null) return;
+    final mrp = item.retailMaxPrice;
+    final sale = _parseNum(editSaleCtrl.text);
+    final pSale = _parseNum(editPSaleCtrl.text);
+    final offer = _parseNum(editOfferCtrl.text);
+    final qty = _parseInt(editQtyCtrl.text);
 
-    final updated = old.copyWith(
-      sale: num.tryParse(editSaleCtrl.text) ?? old.sale,
-      pSale: num.tryParse(editPSaleCtrl.text) ?? old.pSale,
-      offer: num.tryParse(editOfferCtrl.text) ?? old.offer,
-      quantity: int.tryParse(editQtyCtrl.text) ?? old.quantity,
-    );
-
-    // update current page list
-    final index = items.indexWhere((e) => e.id == old.id);
-    if (index != -1) {
-      items[index] = updated;
-      items.refresh(); // 🔑 force UI update
+    if (sale == null || pSale == null || offer == null || qty == null) {
+      Get.snackbar('Invalid', 'Please enter valid numbers in all fields.');
+      return;
     }
 
-    Get.back(); // close dialog
+    if (qty < 0) {
+      Get.snackbar('Invalid', 'Qty must be 0 or greater.');
+      return;
+    }
+
+    if (pSale < sale) {
+      Get.snackbar('Invalid', 'P-sale must be greater than or equal to Sale.');
+      return;
+    }
+    if (pSale > mrp) {
+      Get.snackbar('Invalid', 'P-sale must be less than or equal to MRP.');
+      return;
+    }
+    if (!(offer < sale && offer < pSale)) {
+      Get.snackbar('Invalid', 'M-offer must be less than Sale and P-sale.');
+      return;
+    }
+
+    editAction.value = EditAction.update;
+
+    await _runBlocking(isEditLoading, () async {
+      final res = await _productApi.addOrUpdateProductList(
+        AddUpdateItemRequest(
+          productId: item.id,
+          stockMrp: item.retailMaxPrice,
+          discountPrice: sale, // Sale UI -> discount_price
+          peakHourPrice: pSale, // P-sale UI -> peak_hour_price
+          offerPrice: offer, // M-offer UI -> offer_price
+          qty: qty, // Max-Acpt QTY
+        ),
+      );
+
+      if (Get.isDialogOpen == true) Get.back(); // close dialog
+      await _refreshCurrentList();
+
+      if (res.message.trim().isNotEmpty) {
+        Get.snackbar('Success', res.message);
+      }
+    });
+
+    editAction.value = null;
+  }
+
+  Future<void> onPressStockOut() async {
+    final item = editingItem.value;
+    if (item == null) return;
+    if (isEditLoading.value) return;
+
+    final sale =
+        _parseNum(editSaleCtrl.text) ?? (item.currentStock?.discountPrice ?? 0);
+    final pSale =
+        _parseNum(editPSaleCtrl.text) ??
+        (item.currentStock?.peakHourPrice ?? 0);
+    final offer =
+        _parseNum(editOfferCtrl.text) ??
+        (item.currentStock?.mediboyOfferPrice ?? 0);
+
+    final mrp = item.retailMaxPrice;
+
+    if (pSale < sale) {
+      Get.snackbar('Invalid', 'P-sale must be greater than or equal to Sale.');
+      return;
+    }
+    if (pSale > mrp) {
+      Get.snackbar('Invalid', 'P-sale must be less than or equal to MRP.');
+      return;
+    }
+    if (!(offer < sale && offer < pSale)) {
+      Get.snackbar('Invalid', 'M-offer must be less than Sale and P-sale.');
+      return;
+    }
+
+    editAction.value = EditAction.stockOut;
+
+    await _runBlocking(isEditLoading, () async {
+      final res = await _productApi.addOrUpdateProductList(
+        AddUpdateItemRequest(
+          productId: item.id,
+          stockMrp: item.retailMaxPrice,
+          discountPrice: sale,
+          peakHourPrice: pSale,
+          offerPrice: offer,
+          qty: 0, // ✅ stock-out
+        ),
+      );
+
+      if (Get.isDialogOpen == true) Get.back(); // close dialog
+      await _refreshCurrentList();
+
+      if (res.message.trim().isNotEmpty) {
+        Get.snackbar('Success', res.message);
+      }
+    });
+
+    editAction.value = null;
+  }
+
+  Future<void> _refreshCurrentList() async {
+    if (isSearching) {
+      await _searchNowOrPaginate();
+    } else {
+      await fetchPage(page: currentPage.value);
+    }
+  }
+
+  /// ===================== BLOCKING LOADER =====================
+  Future<void> _runBlocking(RxBool guard, Future<void> Function() fn) async {
+    if (guard.value) return;
+
+    guard.value = true;
+    try {
+      await fn();
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } catch (_) {
+      Get.snackbar('Error', 'Something went wrong. Please try again.');
+    } finally {
+      guard.value = false;
+    }
+  }
+
+  num? _parseNum(String v) {
+    final t = v.trim();
+    if (t.isEmpty) return null;
+    return num.tryParse(t);
+  }
+
+  int? _parseInt(String v) {
+    final t = v.trim();
+    if (t.isEmpty) return null;
+    return int.tryParse(t);
   }
 
   @override
   void onClose() {
+    _searchDebounce?.cancel();
+
     searchCtrl.dispose();
     editSaleCtrl.dispose();
     editPSaleCtrl.dispose();
@@ -156,57 +363,3 @@ class AllListController extends GetxController {
     super.onClose();
   }
 }
-
-/// ===================== BASE PRODUCTS =====================
-const List<DrugItemModel> _baseProducts = [
-  DrugItemModel(
-    id: 'base_1',
-    name: 'Sergel 20mg',
-    type: 'Capsule',
-    pack: '10 capsule in a strip',
-    sale: 5,
-    pSale: 7,
-    offer: 4,
-    quantity: 0,
-  ),
-  DrugItemModel(
-    id: 'base_2',
-    name: 'Sergel 40mg',
-    type: 'Capsule',
-    pack: '10 capsule in a strip',
-    sale: 10,
-    pSale: 12,
-    offer: 9,
-    quantity: 15,
-  ),
-  DrugItemModel(
-    id: 'base_3',
-    name: 'Napa 500mg',
-    type: 'Tablet',
-    pack: '10 tablet in a strip',
-    sale: 2,
-    pSale: 3,
-    offer: 1.5,
-    quantity: 0,
-  ),
-  DrugItemModel(
-    id: 'base_4',
-    name: 'Ace Plus',
-    type: 'Tablet',
-    pack: '10 tablet in a strip',
-    sale: 3,
-    pSale: 4,
-    offer: 2.5,
-    quantity: 20,
-  ),
-  DrugItemModel(
-    id: 'base_5',
-    name: 'Fexo 120mg',
-    type: 'Tablet',
-    pack: '10 tablet in a strip',
-    sale: 12,
-    pSale: 14,
-    offer: 11,
-    quantity: 5,
-  ),
-];

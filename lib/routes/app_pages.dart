@@ -1,11 +1,10 @@
 import 'package:drug/modules/dashboard/dashboard_controller.dart';
 import 'package:drug/modules/dashboard/dashboard_view.dart';
-import 'package:drug/modules/login/login_binding.dart';
-import 'package:drug/modules/login/login_view.dart';
+import 'package:drug/modules/auth/login/login_view.dart';
 import 'package:drug/modules/order/order_controller.dart';
 import 'package:drug/modules/order/order_view.dart';
-import 'package:drug/modules/reset_password/reset_password_binding.dart';
-import 'package:drug/modules/reset_password/reset_password_view.dart';
+import 'package:drug/modules/auth/reset_password/reset_password_binding.dart';
+import 'package:drug/modules/auth/reset_password/reset_password_view.dart';
 import 'package:get/get.dart';
 import '../modules/add_list/add_list_controller.dart';
 import '../modules/add_list/add_list_view.dart';
@@ -24,11 +23,7 @@ class AppPages {
         Get.lazyPut<AddListController>(() => AddListController());
       }),
     ),
-    GetPage(
-      name: Routes.login,
-      page: () => LoginView(),
-      binding: LoginBinding(),
-    ),
+    GetPage(name: Routes.login, page: () => LoginView()),
     GetPage(
       name: Routes.resetPassword,
       page: () => ResetPasswordView(),

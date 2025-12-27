@@ -180,7 +180,7 @@ class OrderController extends GetxController {
     return List.generate(count, (idx) {
       final d = _baseDrugs[(seed + idx) % _baseDrugs.length];
       final qty = 5 + ((seed + idx) % 6); // 5..10
-      return OrderItemModel(drug: d, quantity: qty, rate: d.sale);
+      return OrderItemModel(drug: d, quantity: qty, rate: d.retailMaxPrice);
     });
   }
 
@@ -230,54 +230,54 @@ final _phones = <String>[
 ];
 
 final _baseDrugs = <DrugItemModel>[
-  DrugItemModel(
-    id: 'd1',
-    name: 'Sergel 20mg',
-    type: 'Capsule',
-    pack: '10 capsule in a strip',
-    sale: 6.5,
-    pSale: 7,
-    offer: 6,
-    quantity: 100,
-  ),
-  DrugItemModel(
-    id: 'd2',
-    name: 'Zymet Pro 325mg',
-    type: 'Capsule',
-    pack: '10 capsule in a strip',
-    sale: 9.5,
-    pSale: 10,
-    offer: 9,
-    quantity: 40,
-  ),
-  DrugItemModel(
-    id: 'd3',
-    name: 'Napa 500mg',
-    type: 'Tablet',
-    pack: '10 tablet in a strip',
-    sale: 2.0,
-    pSale: 2.5,
-    offer: 1.8,
-    quantity: 200,
-  ),
-  DrugItemModel(
-    id: 'd4',
-    name: 'Ace Plus',
-    type: 'Tablet',
-    pack: '10 tablet in a strip',
-    sale: 3.0,
-    pSale: 3.5,
-    offer: 2.6,
-    quantity: 120,
-  ),
-  DrugItemModel(
-    id: 'd5',
-    name: 'Fexo 120mg',
-    type: 'Tablet',
-    pack: '10 tablet in a strip',
-    sale: 12,
-    pSale: 13,
-    offer: 11,
-    quantity: 60,
-  ),
+  // DrugItemModel(
+  //   id: 'd1',
+  //   name: 'Sergel 20mg',
+  //   type: 'Capsule',
+  //   pack: '10 capsule in a strip',
+  //   sale: 6.5,
+  //   pSale: 7,
+  //   offer: 6,
+  //   quantity: 100,
+  // ),
+  // DrugItemModel(
+  //   id: 'd2',
+  //   name: 'Zymet Pro 325mg',
+  //   type: 'Capsule',
+  //   pack: '10 capsule in a strip',
+  //   sale: 9.5,
+  //   pSale: 10,
+  //   offer: 9,
+  //   quantity: 40,
+  // ),
+  // DrugItemModel(
+  //   id: 'd3',
+  //   name: 'Napa 500mg',
+  //   type: 'Tablet',
+  //   pack: '10 tablet in a strip',
+  //   sale: 2.0,
+  //   pSale: 2.5,
+  //   offer: 1.8,
+  //   quantity: 200,
+  // ),
+  // DrugItemModel(
+  //   id: 'd4',
+  //   name: 'Ace Plus',
+  //   type: 'Tablet',
+  //   pack: '10 tablet in a strip',
+  //   sale: 3.0,
+  //   pSale: 3.5,
+  //   offer: 2.6,
+  //   quantity: 120,
+  // ),
+  // DrugItemModel(
+  //   id: 'd5',
+  //   name: 'Fexo 120mg',
+  //   type: 'Tablet',
+  //   pack: '10 tablet in a strip',
+  //   sale: 12,
+  //   pSale: 13,
+  //   offer: 11,
+  //   quantity: 60,
+  // ),
 ];

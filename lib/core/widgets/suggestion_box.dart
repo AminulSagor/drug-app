@@ -12,7 +12,6 @@ class SuggestionBox extends GetView<AddListController> {
 
   double _calculateHeight(int count) {
     final visibleItems = count > _maxVisibleItems ? _maxVisibleItems : count;
-
     return (visibleItems * _itemHeight).h;
   }
 
@@ -21,6 +20,19 @@ class SuggestionBox extends GetView<AddListController> {
     final ScrollController scrollController = ScrollController();
 
     return Obx(() {
+      // loading UI while typing + API is fetching
+      if (controller.isFetching.value && controller.filteredProducts.isEmpty) {
+        return Container(
+          height: 56.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6.r),
+            border: Border.all(color: const Color(0xFFE0E0E0)),
+          ),
+          child: _InfoText('Searching...'),
+        );
+      }
+
       final itemCount = controller.filteredProducts.length;
 
       return Container(
@@ -31,7 +43,7 @@ class SuggestionBox extends GetView<AddListController> {
           border: Border.all(color: const Color(0xFFE0E0E0)),
         ),
         child: itemCount == 0
-            ? _NoResult()
+            ? const _NoResult()
             : Scrollbar(
                 controller: scrollController,
                 thumbVisibility: true,
@@ -50,6 +62,11 @@ class SuggestionBox extends GetView<AddListController> {
                   itemBuilder: (context, index) {
                     final product = controller.filteredProducts[index];
 
+                    final title = product.nameLine;
+                    final company = product.companyName.isNotEmpty
+                        ? product.companyName
+                        : 'Unknown company';
+
                     return InkWell(
                       onTap: () => controller.selectProduct(product),
                       child: Padding(
@@ -64,7 +81,9 @@ class SuggestionBox extends GetView<AddListController> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    product.name,
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w600,
@@ -72,8 +91,9 @@ class SuggestionBox extends GetView<AddListController> {
                                   ),
                                   4.verticalSpace,
                                   Text(
-                                    product.company ??
-                                        'Healthcare Pharmaceuticals Ltd.',
+                                    company,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       color: Colors.grey,
@@ -83,7 +103,7 @@ class SuggestionBox extends GetView<AddListController> {
                               ),
                             ),
                             Text(
-                              '৳${product.price}',
+                              '৳${product.retailMaxPrice}',
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
@@ -102,12 +122,15 @@ class SuggestionBox extends GetView<AddListController> {
   }
 }
 
-class _NoResult extends StatelessWidget {
+class _InfoText extends StatelessWidget {
+  final String text;
+  const _InfoText(this.text);
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Text(
-        'No product found',
+        text,
         style: TextStyle(
           fontSize: 13.sp,
           color: Colors.grey,
@@ -115,5 +138,14 @@ class _NoResult extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _NoResult extends StatelessWidget {
+  const _NoResult();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _InfoText('No product found');
   }
 }

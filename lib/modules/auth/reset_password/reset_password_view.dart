@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../core/widgets/auth_background.dart';
+import '../../../core/widgets/auth_background.dart';
 import 'reset_password_controller.dart';
 
 class ResetPasswordView extends GetView<ResetPasswordController> {

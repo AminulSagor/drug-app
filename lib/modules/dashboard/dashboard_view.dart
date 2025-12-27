@@ -203,7 +203,7 @@ class _OrderCard extends StatelessWidget {
                   height: 60.w,
                   color: AppPalette.imageFill,
                 ),
-                title: Text(item.drug.name),
+                title: Text(item.drug.productName),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

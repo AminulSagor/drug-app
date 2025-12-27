@@ -54,50 +54,50 @@ class DashboardController extends GetxController {
   /// ===================== MOCK DATA =====================
   void _seedMockOrders() {
     final drugs = [
-      DrugItemModel(
-        id: 'd1',
-        name: 'Sergel 20mg',
-        type: 'Capsule',
-        pack: '10 capsule in a strip',
-        sale: 6.5,
-        pSale: 7,
-        offer: 6,
-        quantity: 50,
-      ),
-      DrugItemModel(
-        id: 'd2',
-        name: 'Napa 500mg',
-        type: 'Tablet',
-        pack: '10 tablet in a strip',
-        sale: 2,
-        pSale: 3,
-        offer: 1.8,
-        quantity: 100,
-      ),
+      // DrugItemModel(
+      //   id: 'd1',
+      //   name: 'Sergel 20mg',
+      //   type: 'Capsule',
+      //   pack: '10 capsule in a strip',
+      //   sale: 6.5,
+      //   pSale: 7,
+      //   offer: 6,
+      //   quantity: 50,
+      // ),
+      // DrugItemModel(
+      //   id: 'd2',
+      //   name: 'Napa 500mg',
+      //   type: 'Tablet',
+      //   pack: '10 tablet in a strip',
+      //   sale: 2,
+      //   pSale: 3,
+      //   offer: 1.8,
+      //   quantity: 100,
+      // ),
     ];
 
-    _allOrders.addAll(
-      List.generate(5, (i) {
-        return OrderModel(
-          orderNumber: '#12354${6 + i}',
-          customerName: 'Customer ${i + 1}',
-          customerPhone: '01700${i}XXXX',
-          deliveryType: i.isEven
-              ? DeliveryType.homeDelivery
-              : DeliveryType.selfPickup,
-          commission: 100 + (i * 100),
-          status: OrderStatus.pending,
-          items: List.generate(
-            2 + (i % 3),
-            (x) => OrderItemModel(
-              drug: drugs[x % drugs.length],
-              quantity: 5 + x,
-              rate: drugs[x % drugs.length].sale,
-            ),
-          ),
-        );
-      }),
-    );
+    // _allOrders.addAll(
+    //   List.generate(5, (i) {
+    //     return OrderModel(
+    //       orderNumber: '#12354${6 + i}',
+    //       customerName: 'Customer ${i + 1}',
+    //       customerPhone: '01700${i}XXXX',
+    //       deliveryType: i.isEven
+    //           ? DeliveryType.homeDelivery
+    //           : DeliveryType.selfPickup,
+    //       commission: 100 + (i * 100),
+    //       status: OrderStatus.pending,
+    //       items: List.generate(
+    //         2 + (i % 3),
+    //         (x) => OrderItemModel(
+    //           drug: drugs[x % drugs.length],
+    //           quantity: 5 + x,
+    //           rate: drugs[x % drugs.length].sale,
+    //         ),
+    //       ),
+    //     );
+    //   }),
+    // );
   }
 
   /// ===================== FETCH =====================

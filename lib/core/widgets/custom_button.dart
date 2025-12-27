@@ -34,7 +34,7 @@ class CustomButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(0.r),
           ),
         ),
-        onPressed: onTap,
+        onPressed: isLoading ? null : onTap,
         child: isLoading
             ? SizedBox(
                 width: 16.w,

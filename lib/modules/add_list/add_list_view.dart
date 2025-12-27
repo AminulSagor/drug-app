@@ -1,4 +1,7 @@
+// lib/modules/add_list/add_list_view.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -18,22 +21,18 @@ class AddListView extends GetView<AddListController> {
     final LayerLink searchLink = LayerLink();
 
     return Scaffold(
-      key: _scaffoldKey, // ✅ REQUIRED
+      key: _scaffoldKey,
       drawer: const AppDrawer(),
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: true,
       bottomNavigationBar: const AppBottomNav(currentIndex: 2),
-
       body: SafeArea(
         child: Column(
           children: [
             AppHeader(
               title: 'MEDI-STOCK',
-              onMenuTap: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
+              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             ),
-
             Expanded(
               child: Stack(
                 children: [
@@ -53,10 +52,9 @@ class AddListView extends GetView<AddListController> {
                             color: const Color(0xFF0D2EBE),
                           ),
                         ),
-
                         6.verticalSpace,
 
-                        /// 🔗 SEARCH BAR ANCHOR
+                        /// SEARCH BAR ANCHOR
                         CompositedTransformTarget(
                           link: searchLink,
                           child: const _SearchBar(),
@@ -64,8 +62,7 @@ class AddListView extends GetView<AddListController> {
 
                         8.verticalSpace,
 
-                        /// SELECTED PRODUCT + FORM
-                        /// ================= PRODUCT / GUIDE =================
+                        /// SELECTED PRODUCT
                         Obx(() {
                           final product = controller.selectedProduct.value;
 
@@ -95,26 +92,42 @@ class AddListView extends GetView<AddListController> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      product.name,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    /// ✅ product name + strength (small)
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          product.productName,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        4.horizontalSpace,
+                                        Text(
+                                          product.strength,
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(.9),
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     6.verticalSpace,
                                     Row(
-                                      children: const [
-                                        _Tag('Capsule'),
-                                        SizedBox(width: 6),
-                                        _Tag('10 capsule in a strip'),
+                                      children: [
+                                        _Tag(product.type),
+                                        6.horizontalSpace,
+                                        _Tag(product.unitInPack),
                                       ],
                                     ),
                                   ],
                                 ),
                                 Text(
-                                  '৳ ${product.price}',
+                                  '৳ ${product.retailMaxPrice}',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16.sp,
@@ -128,7 +141,7 @@ class AddListView extends GetView<AddListController> {
 
                         12.verticalSpace,
 
-                        /// ================= FORM (ALWAYS VISIBLE) =================
+                        /// FORM
                         const _AddToListForm(),
 
                         120.verticalSpace,
@@ -138,17 +151,14 @@ class AddListView extends GetView<AddListController> {
 
                   /// ================= SEARCH DROPDOWN =================
                   Obx(() {
-                    if (!controller.isSearching.value) {
-                      return const SizedBox();
-                    }
+                    if (!controller.isSearching.value) return const SizedBox();
 
                     return CompositedTransformFollower(
                       link: searchLink,
                       showWhenUnlinked: false,
-                      offset: Offset(0, 44.h), // search bar height
+                      offset: Offset(0, 44.h),
                       child: SizedBox(
-                        width:
-                            MediaQuery.of(context).size.width - 32.w, // 👈 FIX
+                        width: MediaQuery.of(context).size.width - 32.w,
                         child: const SuggestionBox(),
                       ),
                     );
@@ -195,7 +205,7 @@ class _SearchBar extends GetView<AddListController> {
           Container(
             width: 44.w,
             height: 44.h,
-            decoration: BoxDecoration(color: const Color(0xFF0D2EBE)),
+            decoration: const BoxDecoration(color: Color(0xFF0D2EBE)),
             child: Center(
               child: Image.asset(
                 'assets/search_icon.png',
@@ -204,7 +214,6 @@ class _SearchBar extends GetView<AddListController> {
               ),
             ),
           ),
-
           Expanded(
             child: TextField(
               controller: controller.searchCtrl,
@@ -224,59 +233,100 @@ class _SearchBar extends GetView<AddListController> {
   }
 }
 
-class _AddToListForm extends StatelessWidget {
+class _AddToListForm extends GetView<AddListController> {
   const _AddToListForm();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _InputRow(label: 'Sale', hint: 'Enter normal price'),
-        _InputRow(label: 'P-Sale', hint: 'Enter peak-hour price'),
-        _InputRow(label: 'M-Offer', hint: 'Enter mediboy offer price'),
-        _InputRow(label: 'Max-Acpt. QTY', hint: 'Max order quantity'),
-
-        4.verticalSpace,
-
-        SizedBox(
-          width: double.infinity,
-          height: 44.h,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0D2EBE),
-
-              // 👇 force rectangular shape
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-            ),
-            onPressed: () {},
-            child: const Text(
-              'Add To List',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
+        _InputRow(
+          label: 'Sale',
+          hint: 'Enter normal price',
+          controller: controller.saleCtrl,
+          inputType: _InputType.decimal,
         ),
+        _InputRow(
+          label: 'P-Sale',
+          hint: 'Enter peak-hour price',
+          controller: controller.pSaleCtrl,
+          inputType: _InputType.decimal,
+        ),
+        _InputRow(
+          label: 'M-Offer',
+          hint: 'Enter mediboy offer price',
+          controller: controller.offerCtrl,
+          inputType: _InputType.decimal,
+        ),
+        _InputRow(
+          label: 'Max-Acpt. QTY',
+          hint: 'Max order quantity',
+          controller: controller.maxQtyCtrl,
+          inputType: _InputType.integer,
+        ),
+        4.verticalSpace,
+        Obx(() {
+          return SizedBox(
+            width: double.infinity,
+            height: 44.h,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D2EBE),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero,
+                ),
+              ),
+              onPressed: controller.isSubmitting.value
+                  ? null
+                  : controller.submitAddStock,
+              child: controller.isSubmitting.value
+                  ? SizedBox(
+                      width: 18.w,
+                      height: 18.w,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text(
+                      'Add To List',
+                      style: TextStyle(color: Colors.white),
+                    ),
+            ),
+          );
+        }),
       ],
     );
   }
 }
 
+enum _InputType { decimal, integer }
+
 class _InputRow extends StatelessWidget {
   final String label;
   final String hint;
+  final TextEditingController controller;
+  final _InputType inputType;
 
-  const _InputRow({required this.label, required this.hint});
+  const _InputRow({
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.inputType,
+  });
 
   bool get _isLongLabel => label.length > 10;
 
   @override
   Widget build(BuildContext context) {
+    final isInteger = inputType == _InputType.integer;
+
     return Padding(
       padding: EdgeInsets.only(bottom: 8.h),
       child: Row(
         children: [
-          /// LABEL
           Container(
-            width: _isLongLabel ? 120.w : 90.w, // 👈 dynamic width
+            width: _isLongLabel ? 120.w : 90.w,
             height: 44.h,
             alignment: Alignment.center,
             color: const Color(0xFF0D2EBE),
@@ -293,8 +343,6 @@ class _InputRow extends StatelessWidget {
               ),
             ),
           ),
-
-          /// INPUT
           Expanded(
             child: Container(
               height: 44.h,
@@ -303,17 +351,23 @@ class _InputRow extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFD0D0D0)),
               ),
               child: TextField(
+                controller: controller,
+                keyboardType: isInteger
+                    ? TextInputType.number
+                    : const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  isInteger
+                      ? FilteringTextInputFormatter.digitsOnly
+                      : FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\.?\d{0,2}$'),
+                        ),
+                ],
                 textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: hint,
                   isDense: true,
-
-                  // 👇 THIS is what moves hint text
-                  contentPadding: EdgeInsets.only(
-                    top: 8.h, // increase to move down
-                    bottom: 6.h,
-                  ),
+                  contentPadding: EdgeInsets.only(top: 8.h, bottom: 6.h),
                 ),
               ),
             ),

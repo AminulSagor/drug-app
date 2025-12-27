@@ -1,12 +1,10 @@
-import 'package:drug/core/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../core/widgets/auth_background.dart';
-import 'login_controller.dart';
+import 'auth_controller.dart';
 
-class LoginView extends GetView<LoginController> {
+class LoginView extends GetView<AuthController> {
   const LoginView({super.key});
 
   static const _primary = Color(0xFF0D2EBE);
@@ -16,11 +14,7 @@ class LoginView extends GetView<LoginController> {
     return Scaffold(
       body: Stack(
         children: [
-          const AuthBackground(
-            assetPath: 'assets/auth_bg.jpg',
-            fit: BoxFit.cover,
-          ),
-
+          const _AuthBackground(),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -32,11 +26,18 @@ class LoginView extends GetView<LoginController> {
                     vertical: 18.h,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F6F6).withAlpha(128),
+                    color: const Color(0xFFD9F4FF).withOpacity(.70),
                     border: Border.all(
                       color: const Color(0xFFA9A9A9),
                       width: 1,
                     ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(4, 6),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,9 +49,9 @@ class LoginView extends GetView<LoginController> {
                             Text(
                               'MEDI-STOCK',
                               style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w700,
-                                color: AppPalette.title,
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFF1D2B4F),
                               ),
                             ),
                             6.verticalSpace,
@@ -58,8 +59,8 @@ class LoginView extends GetView<LoginController> {
                               'Login',
                               style: TextStyle(
                                 fontSize: 16.sp,
-                                fontWeight: FontWeight.w700,
-                                color: AppPalette.title,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF1D2B4F),
                               ),
                             ),
                           ],
@@ -71,15 +72,11 @@ class LoginView extends GetView<LoginController> {
                         'Phone Number',
                         style: TextStyle(
                           fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       8.verticalSpace,
-                      _InputBox(
-                        controller: controller.phoneCtrl,
-                        hint: '',
-                        keyboardType: TextInputType.phone,
-                      ),
+                      _InputBox(controller: controller.phoneCtrl),
 
                       18.verticalSpace,
 
@@ -87,14 +84,13 @@ class LoginView extends GetView<LoginController> {
                         'Password',
                         style: TextStyle(
                           fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       8.verticalSpace,
                       Obx(() {
                         return _InputBox(
                           controller: controller.passCtrl,
-                          hint: '',
                           obscureText: controller.obscure.value,
                           suffix: InkWell(
                             onTap: () => controller.obscure.value =
@@ -123,7 +119,7 @@ class LoginView extends GetView<LoginController> {
                             'Forgot Password ?',
                             style: TextStyle(
                               fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                               color: Colors.black,
                             ),
                           ),
@@ -159,8 +155,8 @@ class LoginView extends GetView<LoginController> {
                                 : Text(
                                     'Login',
                                     style: TextStyle(
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.w900,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -183,15 +179,11 @@ class LoginView extends GetView<LoginController> {
 
 class _InputBox extends StatelessWidget {
   final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffix;
 
   const _InputBox({
     required this.controller,
-    required this.hint,
-    this.keyboardType,
     this.obscureText = false,
     this.suffix,
   });
@@ -201,24 +193,33 @@ class _InputBox extends StatelessWidget {
     return Container(
       height: 44.h,
       decoration: BoxDecoration(
-        color: AppPalette.textFieldFill,
+        color: const Color(0xFFDCDCDC),
         border: Border.all(color: const Color(0xFF9A9A9A), width: 1),
       ),
       child: TextField(
         controller: controller,
-        keyboardType: keyboardType,
         obscureText: obscureText,
         textAlignVertical: TextAlignVertical.center,
         decoration: InputDecoration(
           border: InputBorder.none,
           isCollapsed: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
-          hintText: hint,
+          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
           suffixIcon: suffix == null
               ? null
-              : SizedBox(height: 28.h, child: suffix),
+              : SizedBox(height: 44.h, child: suffix),
         ),
       ),
+    );
+  }
+}
+
+class _AuthBackground extends StatelessWidget {
+  const _AuthBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Image.asset('assets/auth_bg.jpg', fit: BoxFit.cover),
     );
   }
 }

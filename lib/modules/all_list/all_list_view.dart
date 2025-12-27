@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../core/models/drug_item_model.dart';
 import '../../core/widgets/app_drawer.dart';
 import '../../core/widgets/app_header.dart';
 import '../../core/widgets/bottom_nav.dart';
 import 'all_list_controller.dart';
+import 'models/listed_item_model.dart';
 
 class AllListView extends GetView<AllListController> {
   AllListView({super.key});
@@ -29,7 +29,6 @@ class AllListView extends GetView<AllListController> {
               title: 'MEDI-STOCK',
               onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
             ),
-
             Expanded(
               child: Padding(
                 padding: EdgeInsets.all(16.w),
@@ -46,8 +45,7 @@ class AllListView extends GetView<AllListController> {
                     ),
                     10.verticalSpace,
 
-                    // Top filters row (UI only - optional)
-                    _TopFiltersRow(),
+                    const _TopFiltersRow(),
 
                     Container(
                       padding: EdgeInsets.all(8.w),
@@ -55,7 +53,7 @@ class AllListView extends GetView<AllListController> {
                         color: AppPalette.primary,
                         border: Border.all(color: AppPalette.border),
                       ),
-                      child: _SearchBar(),
+                      child: const _SearchBar(),
                     ),
 
                     _TableHeader(),
@@ -68,7 +66,7 @@ class AllListView extends GetView<AllListController> {
 
                         final items = controller.items;
 
-                        if (controller.totalItems == 0) {
+                        if (items.isEmpty) {
                           return _EmptyState(
                             onReload: () => controller.fetchPage(page: 1),
                           );
@@ -92,10 +90,14 @@ class AllListView extends GetView<AllListController> {
                     8.verticalSpace,
 
                     Obx(() {
+                      // hide pagination while searching
+                      if (controller.isSearching)
+                        return const SizedBox.shrink();
+
                       return _PaginationBar(
                         showingFrom: controller.showingFrom,
                         showingTo: controller.showingTo,
-                        total: controller.totalItems,
+                        total: controller.totalItems.value,
                         currentPage: controller.currentPage.value,
                         totalPages: controller.totalPages,
                         onPrev: controller.prevPage,
@@ -113,7 +115,9 @@ class AllListView extends GetView<AllListController> {
   }
 }
 
-class _TopFiltersRow extends StatelessWidget {
+class _TopFiltersRow extends GetView<AllListController> {
+  const _TopFiltersRow();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -125,18 +129,34 @@ class _TopFiltersRow extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Row(
         children: [
-          Expanded(child: _FakeDropdown(title: 'M-Bill-Mode')),
-          Expanded(child: _FakeDropdown(title: 'Sale')),
-          Spacer(),
+          Expanded(child: _PlainBox(title: 'M-Bill-Mode')),
+          Expanded(
+            child: Obx(() {
+              final selected = controller.selectedSaleMode.value;
+              final busy = controller.isBillModeLoading.value;
+
+              return _SaleDropdown(
+                value: selected,
+                isLoading: busy,
+                onChanged: busy
+                    ? null
+                    : (v) {
+                        if (v == null) return;
+                        controller.changeBillMode(v);
+                      },
+              );
+            }),
+          ),
+          const Spacer(),
         ],
       ),
     );
   }
 }
 
-class _FakeDropdown extends StatelessWidget {
+class _PlainBox extends StatelessWidget {
   final String title;
-  const _FakeDropdown({required this.title});
+  const _PlainBox({required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -147,19 +167,71 @@ class _FakeDropdown extends StatelessWidget {
         color: const Color(0xFFEAEAEA),
         border: Border.all(color: const Color(0xFFB8B8B8)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
-            ),
-          ),
-          Icon(Icons.keyboard_arrow_down, size: 20.sp, color: Colors.grey[700]),
-        ],
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
       ),
+    );
+  }
+}
+
+class _SaleDropdown extends StatelessWidget {
+  final SaleModeOption value;
+  final ValueChanged<SaleModeOption?>? onChanged;
+  final bool isLoading;
+
+  const _SaleDropdown({
+    required this.value,
+    required this.onChanged,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 34.h,
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAEAEA),
+        border: Border.all(color: const Color(0xFFB8B8B8)),
+      ),
+      child: isLoading
+          ? Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Updating...',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            )
+          : DropdownButtonHideUnderline(
+              child: DropdownButton<SaleModeOption>(
+                isExpanded: true,
+                value: value,
+                icon: Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 20.sp,
+                  color: Colors.grey[700],
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: SaleModeOption.sale,
+                    child: Text('Sale'),
+                  ),
+                  DropdownMenuItem(
+                    value: SaleModeOption.pSale,
+                    child: Text('P-Sale'),
+                  ),
+                ],
+                onChanged: onChanged, // null => disabled
+              ),
+            ),
     );
   }
 }
@@ -223,75 +295,53 @@ class _TableHeader extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Row(
         children: [
-          Expanded(
+          _HeaderCell(
+            'Product Description',
             flex: 42,
-            child: Text(
-              'Product Description',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            align: Alignment.centerLeft,
           ),
-          Expanded(
-            flex: 18,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Rate',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 30,
-            child: Align(
-              alignment: Alignment.center,
-              child: Text(
-                'Status',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 14,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'Action',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
+          _HeaderCell('Rate', flex: 18, align: Alignment.centerLeft),
+          _HeaderCell('Status', flex: 30, align: Alignment.center),
+          _HeaderCell('Action', flex: 14, align: Alignment.centerRight),
         ],
       ),
     );
   }
 }
 
+class _HeaderCell extends StatelessWidget {
+  final String text;
+  final int flex;
+  final Alignment align;
+
+  const _HeaderCell(this.text, {required this.flex, required this.align});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex,
+      child: Align(
+        alignment: align,
+        child: Text(
+          text,
+          // ✅ allow wrap
+          softWrap: true,
+          maxLines: 2,
+          overflow: TextOverflow.fade,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            height: 1.1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RowCard extends StatelessWidget {
-  final DrugItemModel item;
+  final ListedItemModel item;
   final int index;
   final VoidCallback onEdit;
 
@@ -306,68 +356,91 @@ class _RowCard extends StatelessWidget {
     final bg = index.isEven ? const Color(0xFFE7E7E7) : const Color(0xFFF3F3F3);
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
       color: bg,
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start, // ✅ top align
         children: [
-          /// Product description
+          /// Product Description
           Expanded(
             flex: 42,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
+                // ✅ wrap-able product name
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: item.productName,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                          height: 1.15,
+                        ),
+                      ),
+                      TextSpan(
+                        text: item.quantity.isEmpty ? '' : ' ${item.quantity}',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                          height: 1.15,
+                        ),
+                      ),
+                    ],
                   ),
+                  softWrap: true,
+                  maxLines: 3, // ✅ allow wrap
+                  overflow: TextOverflow.ellipsis,
                 ),
                 6.verticalSpace,
-                Row(
-                  children: [
-                    _Tag(item.type),
-                    6.horizontalSpace,
-                    _Tag(item.pack),
-                  ],
+
+                // ✅ Wrap chips instead of Row to avoid overlap
+                Wrap(
+                  spacing: 6.w,
+                  runSpacing: 6.h,
+                  children: [_Tag(item.type), _Tag(item.unitInPack)],
                 ),
               ],
             ),
           ),
 
+          8.horizontalSpace,
+
           /// Rate
           Expanded(
-            flex: 20,
-            child: Padding(
-              padding: EdgeInsets.only(left: 6.w),
-              child: _RateText(
-                sale: item.sale,
-                pSale: item.pSale,
-                offer: item.offer,
-              ),
+            flex: 18,
+            child: _RateText(
+              sale: item.sale,
+              pSale: item.pSale,
+              offer: item.offer,
             ),
           ),
 
+          8.horizontalSpace,
+
           /// Status
           Expanded(
-            flex: 32,
+            flex: 30,
             child: Align(
-              alignment: Alignment.center,
+              alignment: Alignment.topCenter, // ✅ top center
               child: _StockPill(inStock: item.inStock),
             ),
           ),
+
+          8.horizontalSpace,
 
           /// Action
           Expanded(
             flex: 14,
             child: Align(
-              alignment: Alignment.centerRight,
+              alignment: Alignment.topRight, // ✅ top right
               child: SizedBox(
-                height: 30.h,
+                height: 32.h,
                 child: FittedBox(
+                  fit: BoxFit.scaleDown,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0B64B7),
@@ -376,6 +449,7 @@ class _RowCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10.r),
                       ),
                       elevation: 0,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: onEdit,
                     child: Text(
@@ -414,24 +488,28 @@ class _RateText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sale : \$ $sale, P-sale:\$$pSale,',
-          maxLines: 1,
+          'Sale : \$ $sale,\nP-sale : \$ $pSale,',
+          softWrap: true,
+          maxLines: 3, // ✅ wrap
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 8.sp,
+            fontSize: 10.sp,
             color: Colors.black87,
-            fontWeight: FontWeight.w300,
+            fontWeight: FontWeight.w400,
+            height: 1.2,
           ),
         ),
         4.verticalSpace,
         Text(
           'Offer : \$ $offer',
-          maxLines: 1,
+          softWrap: true,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 8.sp,
+            fontSize: 10.sp,
             color: Colors.black87,
-            fontWeight: FontWeight.w300,
+            fontWeight: FontWeight.w400,
+            height: 1.2,
           ),
         ),
       ],
@@ -446,22 +524,20 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
       decoration: BoxDecoration(
         color: AppPalette.chipFill,
         borderRadius: BorderRadius.circular(18.r),
       ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 140.w),
-        child: Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 8.sp,
-            color: Colors.black,
-            fontWeight: FontWeight.w400,
-          ),
+      child: Text(
+        text,
+        softWrap: false,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 10.sp,
+          color: Colors.black,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -478,19 +554,17 @@ class _StockPill extends StatelessWidget {
     final fg = inStock ? const Color(0xFF1B7B2C) : const Color(0xFFD61B2A);
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(5.r),
+        borderRadius: BorderRadius.circular(12.r),
       ),
-      child: FittedBox(
-        child: Text(
-          inStock ? 'STK-IN' : 'STK OUT',
-          style: TextStyle(
-            fontSize: 8.sp,
-            fontWeight: FontWeight.w700,
-            color: fg,
-          ),
+      child: Text(
+        inStock ? 'STK-IN' : 'STK OUT',
+        style: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w900,
+          color: fg,
         ),
       ),
     );
@@ -536,7 +610,6 @@ class _PaginationBar extends StatelessWidget {
               ),
             ),
           ),
-
           Row(
             children: [
               _CircleBtn(

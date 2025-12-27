@@ -1,7 +1,10 @@
+import 'package:drug/core/theme/app_palette.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import '../../../core/widgets/custom_button.dart';
 import '../all_list_controller.dart';
 
 class EditDrugDialog extends GetView<AllListController> {
@@ -17,108 +20,141 @@ class EditDrugDialog extends GetView<AllListController> {
         final item = controller.editingItem.value;
         if (item == null) return const SizedBox();
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              /// HEADER
-              Container(
-                color: _primary,
-                padding: EdgeInsets.all(14.w),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w800,
+        return Container(
+          color: AppPalette.white,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                /// HEADER
+                Container(
+                  color: _primary,
+                  padding: EdgeInsets.all(14.w),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  item.productName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                5.w.horizontalSpace,
+                                Text(
+                                  item.quantity,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                            10.h.verticalSpace,
+
+                            /// ✅ both tags
+                            Wrap(
+                              spacing: 8.w,
+                              runSpacing: 8.h,
+                              children: [
+                                _Tag(item.type),
+                                _Tag(item.unitInPack),
+                              ],
+                            ),
+                          ],
                         ),
-                        Text(
-                          '\$${item.sale}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w800,
-                          ),
+                      ),
+                      Text(
+                        '৳ ${item.currentStock?.salePrice.toString() ?? '0'} ',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w800,
                         ),
-                      ],
-                    ),
-                    10.h.verticalSpace,
-                    Row(
-                      children: [
-                        _Tag(item.type),
-                        6.horizontalSpace,
-                        _Tag(item.pack),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              /// TAGS
-              _EditField(label: 'Sale', controller: controller.editSaleCtrl),
-              _EditField(label: 'P-Sale', controller: controller.editPSaleCtrl),
-              _EditField(
-                label: 'M-Offer',
-                controller: controller.editOfferCtrl,
-              ),
-              _EditField(
-                label: 'Max-Acpt. QTY',
-                controller: controller.editQtyCtrl,
-              ),
+                /// FIELDS (✅ numeric-only)
+                _EditField(
+                  label: 'Sale',
+                  controller: controller.editSaleCtrl,
+                  allowDecimal: true,
+                ),
+                _EditField(
+                  label: 'P-Sale',
+                  controller: controller.editPSaleCtrl,
+                  allowDecimal: true,
+                ),
+                _EditField(
+                  label: 'M-Offer',
+                  controller: controller.editOfferCtrl,
+                  allowDecimal: true,
+                ),
+                _EditField(
+                  label: 'Max-Acpt. QTY',
+                  controller: controller.editQtyCtrl,
+                  allowDecimal: false, // ✅ integer only
+                ),
 
-              12.verticalSpace,
+                12.verticalSpace,
 
-              /// ACTIONS
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 44.h,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD0021B),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
+                /// ACTIONS
+                Obx(() {
+                  final busy = controller.isEditLoading.value;
+                  final action = controller.editAction.value;
+
+                  final isStockLoading = busy && action == EditAction.stockOut;
+                  final isUpdateLoading = busy && action == EditAction.update;
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(12.w, 10.h, 6.w, 10.h),
+                          child: CustomButton(
+                            btnColor: const Color(0xFFD0021B),
+                            btnText: 'STOCK-OUT',
+                            isLoading: isStockLoading,
+                            onTap: busy
+                                ? null
+                                : controller.onPressStockOut, // ✅ disable both
                           ),
                         ),
-                        onPressed: controller.markStockOut,
-                        child: const Text(
-                          'STOCK-OUT',
-                          style: TextStyle(color: Colors.white),
-                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 44.h,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10A845),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(6.w, 10.h, 12.w, 10.h),
+                          child: CustomButton(
+                            btnColor: const Color(0xFF10A845),
+                            btnText: 'UPDATE',
+                            isLoading: isUpdateLoading,
+                            onTap: busy
+                                ? null
+                                : controller.onPressUpdate, // ✅ disable both
                           ),
                         ),
-                        onPressed: controller.updateItem,
-                        child: const Text(
-                          'UPDATE',
-                          style: TextStyle(color: Colors.white),
-                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                    ],
+                  );
+                }),
+              ],
+            ),
           ),
         );
       }),
@@ -129,8 +165,13 @@ class EditDrugDialog extends GetView<AllListController> {
 class _EditField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final bool allowDecimal;
 
-  const _EditField({required this.label, required this.controller});
+  const _EditField({
+    required this.label,
+    required this.controller,
+    required this.allowDecimal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +202,14 @@ class _EditField extends StatelessWidget {
               ),
               child: TextField(
                 controller: controller,
-                keyboardType: TextInputType.number,
+                keyboardType: allowDecimal
+                    ? const TextInputType.numberWithOptions(decimal: true)
+                    : TextInputType.number,
+                inputFormatters: allowDecimal
+                    ? <TextInputFormatter>[_SingleDecimalFormatter()]
+                    : <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                 textAlignVertical: TextAlignVertical.center,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
@@ -173,6 +221,28 @@ class _EditField extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// ✅ allows digits + a single dot (no letters, no multiple dots)
+class _SingleDecimalFormatter extends TextInputFormatter {
+  static final _reg = RegExp(r'^\d*\.?\d*$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+
+    if (text.isEmpty) return newValue;
+    if (!_reg.hasMatch(text)) return oldValue;
+
+    // prevent "...." or multiple dots
+    final dotCount = '.'.allMatches(text).length;
+    if (dotCount > 1) return oldValue;
+
+    return newValue;
   }
 }
 
