@@ -1,151 +1,141 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../core/widgets/app_drawer.dart';
 import '../../core/widgets/app_header.dart';
 import '../../core/widgets/bottom_nav.dart';
-import '../../core/models/order_model.dart';
+import 'models/order_with_details_response_model.dart';
 import 'order_controller.dart';
 import 'widgets/order_details_dialog.dart';
 
 class OrderView extends GetView<OrderController> {
-  OrderView({super.key});
-
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  const OrderView({super.key});
 
   static const _primary = Color(0xFF0D2EBE);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 1),
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            AppHeader(
-              title: 'MEDI-STOCK',
-              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// Title row
-                    Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Order',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black,
-                              ),
+    return SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// Title row
+                  Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Order',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
                             ),
-                            2.verticalSpace,
-                            Text(
-                              'Last 60 day’s',
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                color: Colors.grey,
-                              ),
+                          ),
+                          2.verticalSpace,
+                          Text(
+                            'Last 60 day’s',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        height: 28.h,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _primary,
+                            padding: EdgeInsets.symmetric(horizontal: 14.w),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                          ),
+                          onPressed: controller.refreshPage,
+                          child: Text(
+                            'Refresh',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  10.verticalSpace,
+
+                  /// Stats card (from API)
+                  Obx(
+                    () => _StatsCard(
+                      progress: controller.progressCount.value,
+                      cancelled: controller.cancelledCount.value,
+                      delivered: controller.deliveredCount.value,
+                    ),
+                  ),
+
+                  10.verticalSpace,
+
+                  /// Search row
+                  _SearchRow(),
+
+                  10.verticalSpace,
+
+                  /// List
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.isLoading.value) {
+                        return const _LoadingState();
+                      }
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE9ECF3),
+                          borderRadius: BorderRadius.circular(6.r),
+                          border: Border.all(color: const Color(0xFFBFC6D4)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
                             ),
                           ],
                         ),
-                        const Spacer(),
-                        SizedBox(
-                          height: 28.h,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _primary,
-                              padding: EdgeInsets.symmetric(horizontal: 14.w),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6.r),
-                              ),
-                            ),
-                            onPressed: controller.refreshPage,
-                            child: Text(
-                              'Refresh',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                        child: ListView.separated(
+                          padding: EdgeInsets.all(8.w),
+                          itemCount: controller.orders.length,
+                          separatorBuilder: (_, __) => 6.verticalSpace,
+                          itemBuilder: (_, index) {
+                            final order = controller.orders[index];
+                            return _OrderRow(order: order);
+                          },
                         ),
-                      ],
-                    ),
+                      );
+                    }),
+                  ),
 
-                    10.verticalSpace,
+                  10.verticalSpace,
 
-                    /// Stats card
-                    _StatsCard(
-                      progress: controller.progressCount,
-                      cancelled: controller.cancelledCount,
-                      delivered: controller.deliveredCount,
-                    ),
-
-                    10.verticalSpace,
-
-                    /// Search row like image: "Order Number" + input
-                    _SearchRow(),
-
-                    10.verticalSpace,
-
-                    /// List container
-                    Expanded(
-                      child: Obx(() {
-                        if (controller.isLoading.value) {
-                          return const _LoadingState();
-                        }
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE9ECF3),
-                            borderRadius: BorderRadius.circular(6.r),
-                            border: Border.all(color: const Color(0xFFBFC6D4)),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ListView.separated(
-                            padding: EdgeInsets.all(8.w),
-                            itemCount: controller.orders.length,
-                            separatorBuilder: (_, __) => 6.verticalSpace,
-                            itemBuilder: (_, index) {
-                              final order = controller.orders[index];
-                              return _OrderRow(order: order);
-                            },
-                          ),
-                        );
-                      }),
-                    ),
-
-                    10.verticalSpace,
-
-                    /// Pagination bar
-                    _PaginationBar(controller),
-                  ],
-                ),
+                  /// Pagination bar
+                  _PaginationBar(controller),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -191,6 +181,11 @@ class _SearchRow extends GetView<OrderController> {
             child: TextField(
               controller: controller.searchCtrl,
               onChanged: controller.onSearchChanged,
+
+              /// ✅ integer only keyboard
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
               textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 hintText: 'Order Number : Ex : 123456',
@@ -268,15 +263,15 @@ class _StatTile extends StatelessWidget {
           Text(
             '$value',
             style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w900,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
           ),
           2.verticalSpace,
           Text(
             title,
-            style: TextStyle(fontSize: 11.sp, color: Colors.white),
+            style: TextStyle(fontSize: 12.sp, color: Colors.white),
           ),
         ],
       ),
@@ -285,12 +280,12 @@ class _StatTile extends StatelessWidget {
 }
 
 class _OrderRow extends StatelessWidget {
-  final OrderModel order;
+  final OrderWithDetailsModel order;
   const _OrderRow({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final status = _statusUi(order.status);
+    final status = _statusUiFromApi(order.status);
 
     return InkWell(
       onTap: () => Get.dialog(OrderDetailsDialog(order: order)),
@@ -304,11 +299,11 @@ class _OrderRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Top row: order no + amount + time
+            /// top row
             Row(
               children: [
                 Text(
-                  order.orderNumber,
+                  '# ${order.orderNo}',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w900,
@@ -317,7 +312,7 @@ class _OrderRow extends StatelessWidget {
                 ),
                 10.horizontalSpace,
                 Text(
-                  '\$ ${order.totalAmount.toStringAsFixed(2)}',
+                  '\$ ${order.offerTotalAmount}',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w900,
@@ -326,7 +321,7 @@ class _OrderRow extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '21:22:56  22-12-25',
+                  _formatCreatedAt(order.createdAt),
                   style: TextStyle(fontSize: 11.sp, color: Colors.grey),
                 ),
               ],
@@ -334,7 +329,7 @@ class _OrderRow extends StatelessWidget {
 
             6.verticalSpace,
 
-            /// Bottom row: phone + name + status
+            /// bottom row
             Row(
               children: [
                 Icon(Icons.phone, size: 14.sp),
@@ -345,7 +340,7 @@ class _OrderRow extends StatelessWidget {
                 4.horizontalSpace,
                 Expanded(
                   child: Text(
-                    order.customerName,
+                    order.customerFirstName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12.sp),
@@ -381,20 +376,51 @@ class _StatusUi {
   const _StatusUi(this.label, this.color, this.icon);
 }
 
-_StatusUi _statusUi(OrderStatus s) {
-  switch (s) {
-    case OrderStatus.accepted:
-      return const _StatusUi('Accept', Colors.green, Icons.autorenew);
-    case OrderStatus.cancelled:
-      return const _StatusUi('Cancel', Colors.red, Icons.cancel);
-    case OrderStatus.inProgress:
-      return const _StatusUi('Progress', Colors.black, Icons.autorenew);
-    case OrderStatus.completed:
-      return const _StatusUi('Delivered', Colors.blue, Icons.check_circle);
-    case OrderStatus.pending:
-    default:
-      return const _StatusUi('Pending', Colors.grey, Icons.schedule);
+/// Status rules:
+/// Pending = Pending
+/// Cancelled = Cancel
+/// Confirmed = Accept
+/// Delivered = Delivered
+/// Processing, ReadyForPickup, On delivery = Progress
+_StatusUi _statusUiFromApi(String s) {
+  final v = s.trim().toLowerCase();
+
+  if (v == 'pending') {
+    return const _StatusUi('Pending', Colors.grey, Icons.schedule);
   }
+  if (v == 'cancelled' || v == 'canceled') {
+    return const _StatusUi('Cancel', Colors.red, Icons.cancel);
+  }
+  if (v == 'confirmed') {
+    return const _StatusUi('Accept', Colors.green, Icons.check_circle);
+  }
+  if (v == 'delivered') {
+    return const _StatusUi('Delivered', Colors.blue, Icons.check_circle);
+  }
+  if (v == 'processing' || v == 'readyforpickup' || v == 'on delivery') {
+    return const _StatusUi('Progress', Colors.black, Icons.autorenew);
+  }
+
+  return const _StatusUi('Progress', Colors.black, Icons.autorenew);
+}
+
+String _formatCreatedAt(String raw) {
+  final t = raw.trim();
+  if (t.isEmpty) return '';
+
+  // "YYYY-MM-DD HH:MM:SS"
+  if (t.length >= 19 && t[4] == '-' && t[7] == '-') {
+    final date = t.substring(0, 10);
+    final time = t.substring(11, 19);
+
+    final dd = date.substring(8, 10);
+    final mm = date.substring(5, 7);
+    final yy = date.substring(2, 4);
+
+    return '$time  $dd-$mm-$yy';
+  }
+
+  return t;
 }
 
 class _PaginationBar extends StatelessWidget {
@@ -412,13 +438,12 @@ class _PaginationBar extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Showing ${c.showingFrom}-${c.showingTo} of ${c.totalItems}',
+                'Showing ${c.showingFrom}-${c.showingTo} of ${c.totalItems.value}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
               ),
             ),
-
             Row(
               children: [
                 _CircleBtn(
@@ -427,17 +452,16 @@ class _PaginationBar extends StatelessWidget {
                 ),
                 10.horizontalSpace,
                 Text(
-                  '${c.currentPage.value} of ${c.totalPages}',
+                  '${c.currentPage.value} of ${c.totalPages.value}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-
                 10.horizontalSpace,
                 _CircleBtn(
                   icon: Icons.arrow_forward,
-                  onTap: c.currentPage.value >= c.totalPages
+                  onTap: c.currentPage.value >= c.totalPages.value
                       ? null
                       : c.nextPage,
                 ),

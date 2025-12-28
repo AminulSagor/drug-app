@@ -19,7 +19,7 @@ Future<void> main() async {
   // ✅ Decide initial route using token (same as you want)
   final token = await AuthStorage().readToken();
   final initialRoute = (token != null && token.trim().isNotEmpty)
-      ? Routes.dashboard
+      ? Routes.shell
       : Routes.login;
 
   runApp(MyApp(initialRoute: initialRoute));

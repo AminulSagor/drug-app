@@ -1,161 +1,138 @@
 import 'dart:async';
 import 'package:get/get.dart';
-import '../../core/models/drug_item_model.dart';
-import '../../core/models/order_item_model.dart';
-import '../../core/models/order_model.dart';
+
+import '../../core/network/api_exception.dart';
+import 'models/dashboard_response_model.dart';
+import 'services/dashboard_api.dart';
 
 class DashboardController extends GetxController {
-  /// page-level loading (only once)
-  final isPageLoading = true.obs;
+  DashboardController({DashboardApi? api}) : _api = api ?? DashboardApi();
+  final DashboardApi _api;
 
-  /// order-level loading (next / prev)
+  final isPageLoading = true.obs;
   final isOrderLoading = false.obs;
 
-  /// mock backend storage
-  final List<OrderModel> _allOrders = [];
-
-  /// currently visible order
-  final orders = <OrderModel>[].obs;
+  final orders = <PendingOrderModel>[].obs;
+  final List<PendingOrderModel> _pendingOrders = [];
 
   final currentIndex = 0.obs;
+  Timer? _pollTimer;
 
-  int get totalOrders => _allOrders.length;
+  final listedItemsCount = 0.obs;
+  final progressiveCount = 0.obs;
+  final pendingCount = 0.obs;
+  final totalCommission = 0.0.obs;
 
-  /// ===================== STATS =====================
-  int get pendingCount =>
-      _allOrders.where((e) => e.status == OrderStatus.pending).length;
-
-  int get progressiveCount =>
-      _allOrders.where((e) => e.status == OrderStatus.inProgress).length;
-
-  int get listedItemsCount => _allOrders.length;
-
-  num get totalCommission =>
-      _allOrders.fold<num>(0, (sum, e) => sum + e.commission);
-
-  /// ===================== INIT =====================
   @override
   void onInit() {
     super.onInit();
-    _seedMockOrders();
-    _initialLoad();
+    _initialLoadAndStartPolling();
   }
 
-  Future<void> _initialLoad() async {
+  Future<void> _initialLoadAndStartPolling() async {
     isPageLoading.value = true;
-    await fetchOrderAt(index: 0, showLoader: false);
+    await _fetchDashboard(showLoader: false);
     isPageLoading.value = false;
+
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      await _fetchDashboard(showLoader: false);
+    });
   }
 
-  void refreshPage() async {
-    await _initialLoad();
+  @override
+  void onClose() {
+    _pollTimer?.cancel();
+    super.onClose();
   }
 
-  /// ===================== MOCK DATA =====================
-  void _seedMockOrders() {
-    final drugs = [
-      // DrugItemModel(
-      //   id: 'd1',
-      //   name: 'Sergel 20mg',
-      //   type: 'Capsule',
-      //   pack: '10 capsule in a strip',
-      //   sale: 6.5,
-      //   pSale: 7,
-      //   offer: 6,
-      //   quantity: 50,
-      // ),
-      // DrugItemModel(
-      //   id: 'd2',
-      //   name: 'Napa 500mg',
-      //   type: 'Tablet',
-      //   pack: '10 tablet in a strip',
-      //   sale: 2,
-      //   pSale: 3,
-      //   offer: 1.8,
-      //   quantity: 100,
-      // ),
-    ];
-
-    // _allOrders.addAll(
-    //   List.generate(5, (i) {
-    //     return OrderModel(
-    //       orderNumber: '#12354${6 + i}',
-    //       customerName: 'Customer ${i + 1}',
-    //       customerPhone: '01700${i}XXXX',
-    //       deliveryType: i.isEven
-    //           ? DeliveryType.homeDelivery
-    //           : DeliveryType.selfPickup,
-    //       commission: 100 + (i * 100),
-    //       status: OrderStatus.pending,
-    //       items: List.generate(
-    //         2 + (i % 3),
-    //         (x) => OrderItemModel(
-    //           drug: drugs[x % drugs.length],
-    //           quantity: 5 + x,
-    //           rate: drugs[x % drugs.length].sale,
-    //         ),
-    //       ),
-    //     );
-    //   }),
-    // );
+  Future<void> refreshPage() async {
+    await _fetchDashboard(showLoader: true);
   }
 
-  /// ===================== FETCH =====================
-  Future<void> fetchOrderAt({
-    required int index,
-    bool showLoader = true,
-  }) async {
-    if (index < 0 || index >= _allOrders.length) return;
-
+  Future<void> _fetchDashboard({required bool showLoader}) async {
     if (showLoader) isOrderLoading.value = true;
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    try {
+      final DashboardResponseModel res = await _api.getDashboardData();
 
-    orders.assignAll([_allOrders[index]]);
-    currentIndex.value = index;
+      listedItemsCount.value = res.totalItem;
+      progressiveCount.value = res.progressiveOrders;
+      pendingCount.value = res.pendingOrders.length;
+      totalCommission.value = res.account.toDouble();
 
-    if (showLoader) isOrderLoading.value = false;
+      _pendingOrders
+        ..clear()
+        ..addAll(res.pendingOrders);
+
+      if (_pendingOrders.isEmpty) {
+        orders.clear();
+        currentIndex.value = 0;
+      } else {
+        final idx = currentIndex.value.clamp(0, _pendingOrders.length - 1);
+        currentIndex.value = idx;
+        orders.assignAll([_pendingOrders[idx]]);
+      }
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } catch (_) {
+      Get.snackbar('Error', 'Something went wrong. Please try again.');
+    } finally {
+      if (showLoader) isOrderLoading.value = false;
+    }
   }
 
-  /// ===================== NAV =====================
   void nextOrder() {
-    if (currentIndex.value < _allOrders.length - 1) {
-      fetchOrderAt(index: currentIndex.value + 1);
+    if (isOrderLoading.value) return;
+    if (_pendingOrders.isEmpty) return;
+
+    if (currentIndex.value < _pendingOrders.length - 1) {
+      currentIndex.value++;
+      orders.assignAll([_pendingOrders[currentIndex.value]]);
     }
   }
 
   void prevOrder() {
+    if (isOrderLoading.value) return;
+    if (_pendingOrders.isEmpty) return;
+
     if (currentIndex.value > 0) {
-      fetchOrderAt(index: currentIndex.value - 1);
+      currentIndex.value--;
+      orders.assignAll([_pendingOrders[currentIndex.value]]);
     }
   }
 
-  /// ===================== ACTION =====================
-  void acceptOrder(OrderModel order) {
-    _updateStatus(order, OrderStatus.accepted);
+  /// ===================== ACCEPT / DECLINE =====================
+
+  Future<void> acceptOrder(PendingOrderModel order) async {
+    await _acceptDecline(order: order, actionValue: 1);
   }
 
-  void declineOrder(OrderModel order) {
-    _updateStatus(order, OrderStatus.cancelled);
+  Future<void> declineOrder(PendingOrderModel order) async {
+    await _acceptDecline(order: order, actionValue: 0);
   }
 
-  void _updateStatus(OrderModel order, OrderStatus status) {
-    final idx = _allOrders.indexWhere(
-      (e) => e.orderNumber == order.orderNumber,
-    );
-    if (idx == -1) return;
+  Future<void> _acceptDecline({
+    required PendingOrderModel order,
+    required int actionValue,
+  }) async {
+    if (isOrderLoading.value) return;
 
-    _allOrders[idx] = OrderModel(
-      orderNumber: order.orderNumber,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      items: order.items,
-      status: status,
-      deliveryType: order.deliveryType,
-      commission: order.commission,
-    );
+    isOrderLoading.value = true;
+    try {
+      await _api.acceptDeclineOrder(
+        orderId: order.id, // ✅ use order id
+        actionValue: actionValue,
+      );
 
-    orders[0] = _allOrders[idx];
-    orders.refresh();
+      // ✅ refresh dashboard so stats + pending orders update from server
+      await _fetchDashboard(showLoader: false);
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } catch (_) {
+      Get.snackbar('Error', 'Something went wrong. Please try again.');
+    } finally {
+      isOrderLoading.value = false;
+    }
   }
 }

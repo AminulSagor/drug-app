@@ -10,106 +10,92 @@ import 'all_list_controller.dart';
 import 'models/listed_item_model.dart';
 
 class AllListView extends GetView<AllListController> {
-  AllListView({super.key});
-
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  const AllListView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(),
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: true,
-      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
-      body: SafeArea(
-        child: Column(
-          children: [
-            AppHeader(
-              title: 'MEDI-STOCK',
-              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'All-List',
-                      style: TextStyle(
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w800,
-                        color: AppPalette.primary,
-                      ),
+    return SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All-List',
+                    style: TextStyle(
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppPalette.primary,
                     ),
-                    10.verticalSpace,
+                  ),
+                  10.verticalSpace,
 
-                    const _TopFiltersRow(),
+                  const _TopFiltersRow(),
 
-                    Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: AppPalette.primary,
-                        border: Border.all(color: AppPalette.border),
-                      ),
-                      child: const _SearchBar(),
+                  Container(
+                    padding: EdgeInsets.all(8.w),
+                    decoration: BoxDecoration(
+                      color: AppPalette.primary,
+                      border: Border.all(color: AppPalette.border),
                     ),
+                    child: const _SearchBar(),
+                  ),
 
-                    _TableHeader(),
+                  _TableHeader(),
 
-                    Expanded(
-                      child: Obx(() {
-                        if (controller.isLoading.value) {
-                          return const _LoadingState();
-                        }
+                  Expanded(
+                    child: Obx(() {
+                      if (controller.isLoading.value) {
+                        return const _LoadingState();
+                      }
 
-                        final items = controller.items;
+                      final items = controller.items;
 
-                        if (items.isEmpty) {
-                          return _EmptyState(
-                            onReload: () => controller.fetchPage(page: 1),
-                          );
-                        }
-
-                        return ListView.builder(
-                          padding: EdgeInsets.only(top: 0.h, bottom: 12.h),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) {
-                            final item = items[index];
-                            return _RowCard(
-                              item: item,
-                              index: index,
-                              onEdit: () => controller.onEditItem(item),
-                            );
-                          },
+                      if (items.isEmpty) {
+                        return _EmptyState(
+                          onReload: () => controller.fetchPage(page: 1),
                         );
-                      }),
-                    ),
+                      }
 
-                    8.verticalSpace,
-
-                    Obx(() {
-                      // hide pagination while searching
-                      if (controller.isSearching)
-                        return const SizedBox.shrink();
-
-                      return _PaginationBar(
-                        showingFrom: controller.showingFrom,
-                        showingTo: controller.showingTo,
-                        total: controller.totalItems.value,
-                        currentPage: controller.currentPage.value,
-                        totalPages: controller.totalPages,
-                        onPrev: controller.prevPage,
-                        onNext: controller.nextPage,
+                      return ListView.builder(
+                        padding: EdgeInsets.only(top: 0.h, bottom: 12.h),
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return _RowCard(
+                            item: item,
+                            index: index,
+                            onEdit: () => controller.onEditItem(item),
+                          );
+                        },
                       );
                     }),
-                  ],
-                ),
+                  ),
+
+                  8.verticalSpace,
+
+                  Obx(() {
+                    // hide pagination while searching
+                    if (controller.isSearching) return const SizedBox.shrink();
+
+                    return _PaginationBar(
+                      showingFrom: controller.showingFrom,
+                      showingTo: controller.showingTo,
+                      total: controller.totalItems.value,
+                      currentPage: controller.currentPage.value,
+                      totalPages: controller.totalPages,
+                      onPrev: controller.prevPage,
+                      onNext: controller.nextPage,
+                    );
+                  }),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -383,7 +369,7 @@ class _RowCard extends StatelessWidget {
                       TextSpan(
                         text: item.quantity.isEmpty ? '' : ' ${item.quantity}',
                         style: TextStyle(
-                          fontSize: 12.sp,
+                          fontSize: 9.sp,
                           fontWeight: FontWeight.w500,
                           color: Colors.black,
                           height: 1.15,
@@ -524,7 +510,7 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 3.h),
       decoration: BoxDecoration(
         color: AppPalette.chipFill,
         borderRadius: BorderRadius.circular(18.r),

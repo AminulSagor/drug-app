@@ -39,7 +39,6 @@ class AuthApi {
     try {
       final token = await _storage.readToken();
       if (token == null || token.isEmpty) {
-        // already logged out
         await _storage.clearAll();
         return const LogoutResponse(message: 'Already logged out');
       }
@@ -55,7 +54,6 @@ class AuthApi {
       await _storage.clearAll();
       return parsed;
     } on DioException catch (e) {
-      // even if API fails, clear local session to be safe
       await _storage.clearAll();
       throw _mapDioToApiException(e);
     } catch (_) {
@@ -64,12 +62,93 @@ class AuthApi {
     }
   }
 
+  // ============================================================
+  // ✅ RESET PASSWORD APIs (NOW RETURNS MESSAGE)
+  // ============================================================
+
+  String _extractMessage(dynamic data) {
+    try {
+      if (data is Map<String, dynamic>) {
+        final m = data['message'];
+        if (m is String && m.trim().isNotEmpty) return m.trim();
+      }
+      if (data is String && data.trim().isNotEmpty) return data.trim();
+    } catch (_) {}
+    return '';
+  }
+
+  /// Sent OTP API : /pharmacy/send_otp
+  /// Payload : {"number":"01616815056"}
+  Future<String> sendOtp({required String number}) async {
+    try {
+      final res = await _dio.post(
+        '/pharmacy/send_otp',
+        data: {'number': number},
+      );
+      final msg = _extractMessage(res.data);
+      return msg.isNotEmpty ? msg : 'OTP sent';
+    } on DioException catch (e) {
+      throw _mapDioToApiException(e);
+    } on SocketException {
+      throw ApiException('No internet connection. Please try again.');
+    } catch (e) {
+      dev.log('sendOtp error', error: e);
+      throw ApiException('Something went wrong. Please try again.');
+    }
+  }
+
+  /// Verify OTP API : /pharmacy/verify_otp
+  /// Payload : {"number":"01616815056","otp":1234}
+  Future<String> verifyOtp({required String number, required int otp}) async {
+    try {
+      final res = await _dio.post(
+        '/pharmacy/verify_otp',
+        data: {'number': number, 'otp': otp},
+      );
+      final msg = _extractMessage(res.data);
+      return msg.isNotEmpty ? msg : 'OTP verified';
+    } on DioException catch (e) {
+      throw _mapDioToApiException(e);
+    } on SocketException {
+      throw ApiException('No internet connection. Please try again.');
+    } catch (e) {
+      dev.log('verifyOtp error', error: e);
+      throw ApiException('Something went wrong. Please try again.');
+    }
+  }
+
+  /// Password Reset API : /pharmacy/password_reset
+  /// Payload : {"phoneNumber":"01616815056","otp":1234,"password":"xxxxxx"}
+  Future<String> passwordReset({
+    required String phoneNumber,
+    required int otp,
+    required String password,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/pharmacy/password_reset',
+        data: {'phoneNumber': phoneNumber, 'otp': otp, 'password': password},
+      );
+      final msg = _extractMessage(res.data);
+      return msg.isNotEmpty ? msg : 'Password changed';
+    } on DioException catch (e) {
+      throw _mapDioToApiException(e);
+    } on SocketException {
+      throw ApiException('No internet connection. Please try again.');
+    } catch (e) {
+      dev.log('passwordReset error', error: e);
+      throw ApiException('Something went wrong. Please try again.');
+    }
+  }
+
+  // ============================================================
+
   ApiException _mapDioToApiException(DioException e) {
     final status = e.response?.statusCode;
 
-    // server message if present
     String msg = 'Request failed. Please try again.';
     final data = e.response?.data;
+
     if (data is Map<String, dynamic>) {
       final m = data['message'];
       if (m is String && m.trim().isNotEmpty) msg = m;

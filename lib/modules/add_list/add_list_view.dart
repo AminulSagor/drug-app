@@ -5,169 +5,152 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../core/widgets/app_drawer.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/widgets/bottom_nav.dart';
 import '../../core/widgets/suggestion_box.dart';
 import 'add_list_controller.dart';
 
 class AddListView extends GetView<AddListController> {
-  AddListView({super.key});
-
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  const AddListView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final LayerLink searchLink = LayerLink();
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const AppDrawer(),
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: true,
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
-      body: SafeArea(
-        child: Column(
-          children: [
-            AppHeader(
-              title: 'MEDI-STOCK',
-              onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-            Expanded(
-              child: Stack(
-                children: [
-                  /// ================= MAIN CONTENT =================
-                  SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Add List',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF0D2EBE),
-                          ),
+    return SafeArea(
+      child: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                /// ================= MAIN CONTENT =================
+                SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Add List',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0D2EBE),
                         ),
-                        6.verticalSpace,
+                      ),
+                      6.verticalSpace,
 
-                        /// SEARCH BAR ANCHOR
-                        CompositedTransformTarget(
-                          link: searchLink,
-                          child: const _SearchBar(),
-                        ),
+                      /// SEARCH BAR ANCHOR
+                      CompositedTransformTarget(
+                        link: searchLink,
+                        child: const _SearchBar(),
+                      ),
 
-                        8.verticalSpace,
+                      8.verticalSpace,
 
-                        /// SELECTED PRODUCT
-                        Obx(() {
-                          final product = controller.selectedProduct.value;
+                      /// SELECTED PRODUCT
+                      Obx(() {
+                        final product = controller.selectedProduct.value;
 
-                          if (product == null) {
-                            return Container(
-                              width: double.infinity,
-                              height: 44.h,
-                              alignment: Alignment.center,
-                              color: const Color(0xFF0D2EBE),
-                              child: Text(
-                                'No selected product',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            );
-                          }
-
+                        if (product == null) {
                           return Container(
-                            padding: EdgeInsets.all(12.w),
+                            width: double.infinity,
+                            height: 44.h,
+                            alignment: Alignment.center,
                             color: const Color(0xFF0D2EBE),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    /// ✅ product name + strength (small)
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          product.productName,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16.sp,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        4.horizontalSpace,
-                                        Text(
-                                          product.strength,
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(.9),
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    6.verticalSpace,
-                                    Row(
-                                      children: [
-                                        _Tag(product.type),
-                                        6.horizontalSpace,
-                                        _Tag(product.unitInPack),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Text(
-                                  '৳ ${product.retailMaxPrice}',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              'No selected product',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           );
-                        }),
+                        }
 
-                        12.verticalSpace,
+                        return Container(
+                          padding: EdgeInsets.all(12.w),
+                          color: const Color(0xFF0D2EBE),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  /// ✅ product name + strength (small)
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        product.productName,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      4.horizontalSpace,
+                                      Text(
+                                        product.strength,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(.9),
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  6.verticalSpace,
+                                  Row(
+                                    children: [
+                                      _Tag(product.type),
+                                      6.horizontalSpace,
+                                      _Tag(product.unitInPack),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '৳ ${product.retailMaxPrice}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
 
-                        /// FORM
-                        const _AddToListForm(),
+                      12.verticalSpace,
 
-                        120.verticalSpace,
-                      ],
-                    ),
+                      /// FORM
+                      const _AddToListForm(),
+
+                      120.verticalSpace,
+                    ],
                   ),
+                ),
 
-                  /// ================= SEARCH DROPDOWN =================
-                  Obx(() {
-                    if (!controller.isSearching.value) return const SizedBox();
+                /// ================= SEARCH DROPDOWN =================
+                Obx(() {
+                  if (!controller.isSearching.value) return const SizedBox();
 
-                    return CompositedTransformFollower(
-                      link: searchLink,
-                      showWhenUnlinked: false,
-                      offset: Offset(0, 44.h),
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width - 32.w,
-                        child: const SuggestionBox(),
-                      ),
-                    );
-                  }),
-                ],
-              ),
+                  return CompositedTransformFollower(
+                    link: searchLink,
+                    showWhenUnlinked: false,
+                    offset: Offset(0, 44.h),
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width - 32.w,
+                      child: const SuggestionBox(),
+                    ),
+                  );
+                }),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

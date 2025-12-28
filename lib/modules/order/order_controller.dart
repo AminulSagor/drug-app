@@ -2,282 +2,232 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../core/models/drug_item_model.dart';
-import '../../core/models/order_item_model.dart';
-import '../../core/models/order_model.dart';
+import '../../core/network/api_exception.dart';
+import 'models/order_with_details_response_model.dart';
+import 'services/order_api.dart';
 
 class OrderController extends GetxController {
+  OrderController({OrderApi? api}) : _api = api ?? OrderApi();
+  final OrderApi _api;
+
   /// UI
   final searchCtrl = TextEditingController();
   final searchQuery = ''.obs;
 
-  /// Loading (list area)
+  /// loading for list area
   final isLoading = false.obs;
 
-  /// Current page data only (what list shows)
-  final orders = <OrderModel>[].obs;
+  /// ✅ loading for "Peaked" action (per-order)
+  final clearingOrderIds = <int>{}.obs;
 
-  /// Pagination (mock backend)
-  final int pageSize = 20;
-  final int totalItems = 600;
+  /// stats from API
+  final progressCount = 0.obs;
+  final cancelledCount = 0.obs;
+  final deliveredCount = 0.obs;
+
+  /// list
+  final orders = <OrderWithDetailsModel>[].obs;
+
+  /// pagination (from list API)
   final currentPage = 1.obs;
+  final totalPages = 1.obs;
+  final totalItems = 0.obs;
+  final pageSize = 1.obs; // API per_page
 
-  int get totalPages => (totalItems / pageSize).ceil();
+  /// keep last list meta to restore after search clears
+  int _lastListPage = 1;
+  int _lastListTotalPages = 1;
+  int _lastListTotalItems = 0;
+  int _lastListPerPage = 1;
+  List<OrderWithDetailsModel> _lastListData = [];
+
+  Timer? _pollTimer;
+  Timer? _searchDebounce;
+
+  int _searchReqId = 0; // to ignore stale responses
+
+  bool get isSearching => searchQuery.value.trim().isNotEmpty;
 
   int get showingFrom {
     if (orders.isEmpty) return 0;
-    return ((currentPage.value - 1) * pageSize) + 1;
+    if (isSearching) return 1;
+    return ((currentPage.value - 1) * pageSize.value) + 1;
   }
 
   int get showingTo {
     if (orders.isEmpty) return 0;
-    final to = currentPage.value * pageSize;
-    return to > totalItems ? totalItems : to;
+    if (isSearching) return orders.length;
+
+    final to = currentPage.value * pageSize.value;
+    return to > totalItems.value ? totalItems.value : to;
   }
 
-  /// ===================== FIXED STATS (GLOBAL) =====================
-  /// These values never change with pagination.
-  /// We compute them deterministically across all 600 mock orders.
-  late final int _globalProgressCount;
-  late final int _globalCancelledCount;
-  late final int _globalDeliveredCount;
-
-  int get progressCount => _globalProgressCount;
-  int get cancelledCount => _globalCancelledCount;
-  int get deliveredCount => _globalDeliveredCount;
-
-  /// ===================== INIT =====================
   @override
   void onInit() {
     super.onInit();
-
-    // pre-calc fixed stats for all 600
-    final stats = _computeGlobalStats(totalItems);
-    _globalProgressCount = stats.$1;
-    _globalCancelledCount = stats.$2;
-    _globalDeliveredCount = stats.$3;
-
-    fetchPage(page: 1);
+    _initialLoadAndStartPolling();
   }
 
-  void refreshPage() {
-    // if searching -> refresh search, else refresh current page
-    if (_isSearching) {
-      searchByOrderNumber(searchQuery.value);
-    } else {
-      fetchPage(page: currentPage.value);
-    }
-  }
+  Future<void> _initialLoadAndStartPolling() async {
+    await fetchPage(page: 1, showLoader: true);
 
-  bool get _isSearching => searchQuery.value.trim().isNotEmpty;
-
-  /// ===================== MOCK: PAGE FETCH =====================
-  Future<void> fetchPage({required int page}) async {
-    isLoading.value = true;
-    await Future.delayed(const Duration(milliseconds: 650));
-
-    final startIndex = (page - 1) * pageSize;
-    final endIndex = (startIndex + pageSize) > totalItems
-        ? totalItems
-        : (startIndex + pageSize);
-
-    final pageData = <OrderModel>[];
-
-    for (int i = startIndex; i < endIndex; i++) {
-      pageData.add(_buildOrderAt(i));
-    }
-
-    orders.assignAll(pageData);
-    currentPage.value = page;
-    isLoading.value = false;
-  }
-
-  /// ===================== SEARCH (FUNCTIONAL) =====================
-  /// Mock "server search": match substring from the numeric part of orderNumber.
-  Future<void> searchByOrderNumber(String query) async {
-    final q = query.trim();
-    if (q.isEmpty) {
-      // back to normal paging
-      currentPage.value = 1;
-      await fetchPage(page: 1);
-      return;
-    }
-
-    isLoading.value = true;
-    await Future.delayed(const Duration(milliseconds: 450));
-
-    // scan all 600 and pick matches (limit to first pageSize results for UI)
-    final results = <OrderModel>[];
-    for (int i = 0; i < totalItems; i++) {
-      final orderNo = (563500 + i).toString(); // numeric part
-      if (orderNo.contains(q)) {
-        results.add(_buildOrderAt(i));
-        if (results.length >= pageSize) break;
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      if (!isSearching) {
+        await fetchPage(page: currentPage.value, showLoader: false);
       }
-    }
-
-    // show search results, reset page indicator to 1
-    orders.assignAll(results);
-    currentPage.value = 1;
-
-    isLoading.value = false;
+    });
   }
 
-  void onSearchChanged(String v) {
-    searchQuery.value = v.trim();
-    // live search like your UI
-    searchByOrderNumber(searchQuery.value);
-  }
-
-  void clearSearch() {
-    searchCtrl.clear();
-    searchQuery.value = '';
-    fetchPage(page: 1);
-  }
-
-  /// ===================== PAGINATION =====================
-  void nextPage() {
-    // disable paging while searching (because showing search results)
-    if (_isSearching) return;
-
-    if (currentPage.value < totalPages) {
-      fetchPage(page: currentPage.value + 1);
-    }
-  }
-
-  void prevPage() {
-    if (_isSearching) return;
-
-    if (currentPage.value > 1) {
-      fetchPage(page: currentPage.value - 1);
-    }
-  }
-
-  /// ===================== CLEANUP =====================
   @override
   void onClose() {
+    _pollTimer?.cancel();
+    _searchDebounce?.cancel();
     searchCtrl.dispose();
     super.onClose();
   }
 
-  /// ===================== ORDER BUILDER =====================
-  OrderModel _buildOrderAt(int i) {
-    return OrderModel(
-      orderNumber: '#${563500 + i}',
-      customerName: _names[i % _names.length],
-      customerPhone: _phones[i % _phones.length],
-      deliveryType: i.isEven
-          ? DeliveryType.homeDelivery
-          : DeliveryType.selfPickup,
-      commission: (50 + (i % 7) * 10),
-      status: _statusCycle[i % _statusCycle.length],
-      items: _mockItems(seed: i),
-    );
+  Future<void> refreshPage() async {
+    if (isSearching) {
+      await _performSearch(searchQuery.value, showLoader: true);
+      return;
+    }
+    await fetchPage(page: currentPage.value, showLoader: true);
   }
 
-  List<OrderItemModel> _mockItems({required int seed}) {
-    final count = 3 + (seed % 3); // 3..5 items
-    return List.generate(count, (idx) {
-      final d = _baseDrugs[(seed + idx) % _baseDrugs.length];
-      final qty = 5 + ((seed + idx) % 6); // 5..10
-      return OrderItemModel(drug: d, quantity: qty, rate: d.retailMaxPrice);
+  Future<void> fetchPage({required int page, required bool showLoader}) async {
+    if (showLoader) isLoading.value = true;
+
+    try {
+      final res = await _api.getOrdersWithDetails(page: page);
+
+      progressCount.value = res.progress;
+      cancelledCount.value = res.cancelled;
+      deliveredCount.value = res.delivered;
+
+      currentPage.value = res.orders.currentPage;
+      totalPages.value = res.orders.lastPage;
+      totalItems.value = res.orders.total;
+      pageSize.value = res.orders.perPage == 0 ? 1 : res.orders.perPage;
+
+      orders.assignAll(res.orders.data);
+
+      _lastListPage = currentPage.value;
+      _lastListTotalPages = totalPages.value;
+      _lastListTotalItems = totalItems.value;
+      _lastListPerPage = pageSize.value;
+      _lastListData = List<OrderWithDetailsModel>.from(res.orders.data);
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } catch (_) {
+      Get.snackbar('Error', 'Something went wrong. Please try again.');
+    } finally {
+      if (showLoader) isLoading.value = false;
+    }
+  }
+
+  void nextPage() {
+    if (isSearching) return;
+    if (currentPage.value >= totalPages.value) return;
+    fetchPage(page: currentPage.value + 1, showLoader: true);
+  }
+
+  void prevPage() {
+    if (isSearching) return;
+    if (currentPage.value <= 1) return;
+    fetchPage(page: currentPage.value - 1, showLoader: true);
+  }
+
+  void onSearchChanged(String v) {
+    final q = v.trim();
+    searchQuery.value = q;
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 450), () async {
+      if (q.isEmpty) {
+        _restoreLastListState();
+        return;
+      }
+      await _performSearch(q, showLoader: true);
     });
   }
 
-  /// ===================== FIXED STATS CALC =====================
-  /// Returns: (progress, cancelled, delivered)
-  (int, int, int) _computeGlobalStats(int total) {
-    int progress = 0;
-    int cancelled = 0;
-    int delivered = 0;
+  void clearSearch() {
+    _searchDebounce?.cancel();
+    searchCtrl.clear();
+    searchQuery.value = '';
+    _restoreLastListState();
+  }
 
-    for (int i = 0; i < total; i++) {
-      final s = _statusCycle[i % _statusCycle.length];
-      if (s == OrderStatus.inProgress) progress++;
-      if (s == OrderStatus.cancelled) cancelled++;
-      if (s == OrderStatus.completed) delivered++;
+  void _restoreLastListState() {
+    currentPage.value = _lastListPage;
+    totalPages.value = _lastListTotalPages;
+    totalItems.value = _lastListTotalItems;
+    pageSize.value = _lastListPerPage;
+    orders.assignAll(_lastListData);
+  }
+
+  Future<void> _performSearch(String q, {required bool showLoader}) async {
+    final parsed = int.tryParse(q);
+    if (parsed == null) {
+      orders.clear();
+      totalItems.value = 0;
+      totalPages.value = 1;
+      currentPage.value = 1;
+      pageSize.value = 1;
+      return;
     }
 
-    return (progress, cancelled, delivered);
+    final reqId = ++_searchReqId;
+
+    if (showLoader) isLoading.value = true;
+    try {
+      final result = await _api.searchOrdersByOrderNumber(orderNumber: parsed);
+
+      if (reqId != _searchReqId) return;
+
+      orders.assignAll(result);
+
+      currentPage.value = 1;
+      totalPages.value = 1;
+      totalItems.value = result.length;
+      pageSize.value = result.isEmpty ? 1 : result.length;
+    } on ApiException catch (e) {
+      if (reqId != _searchReqId) return;
+      Get.snackbar('Error', e.message);
+    } catch (_) {
+      if (reqId != _searchReqId) return;
+      Get.snackbar('Error', 'Something went wrong. Please try again.');
+    } finally {
+      if (showLoader) isLoading.value = false;
+    }
+  }
+
+  /// ✅ NEW: Clear Order (called from "Peaked" button)
+  Future<void> clearOrder({required int orderId}) async {
+    if (orderId <= 0) return;
+    if (clearingOrderIds.contains(orderId)) return;
+
+    clearingOrderIds.add(orderId);
+    try {
+      final msg = await _api.clearOrder(orderId: orderId);
+      Get.snackbar('Success', msg);
+
+      // ✅ Refresh list without full loader
+      if (isSearching) {
+        await _performSearch(searchQuery.value, showLoader: false);
+      } else {
+        await fetchPage(page: currentPage.value, showLoader: false);
+      }
+
+      // optional: close details dialog after success
+      // if (Get.isDialogOpen == true) Get.back();
+    } on ApiException catch (e) {
+      Get.snackbar('Error', e.message);
+    } catch (_) {
+      Get.snackbar('Error', 'Something went wrong. Please try again.');
+    } finally {
+      clearingOrderIds.remove(orderId);
+    }
   }
 }
-
-/// ---------------- MOCK CONSTANTS ----------------
-
-final _statusCycle = <OrderStatus>[
-  OrderStatus.accepted,
-  OrderStatus.cancelled,
-  OrderStatus.inProgress,
-  OrderStatus.accepted,
-  OrderStatus.pending,
-  OrderStatus.completed,
-];
-
-final _names = <String>[
-  'Fazle Rabbi',
-  'Sabbir Hasan',
-  'Nusrat Jahan',
-  'Rafi Ahmed',
-  'Mim Akter',
-];
-
-final _phones = <String>[
-  '01616815056',
-  '01711002233',
-  '01855443322',
-  '01977889900',
-  '01300998877',
-];
-
-final _baseDrugs = <DrugItemModel>[
-  // DrugItemModel(
-  //   id: 'd1',
-  //   name: 'Sergel 20mg',
-  //   type: 'Capsule',
-  //   pack: '10 capsule in a strip',
-  //   sale: 6.5,
-  //   pSale: 7,
-  //   offer: 6,
-  //   quantity: 100,
-  // ),
-  // DrugItemModel(
-  //   id: 'd2',
-  //   name: 'Zymet Pro 325mg',
-  //   type: 'Capsule',
-  //   pack: '10 capsule in a strip',
-  //   sale: 9.5,
-  //   pSale: 10,
-  //   offer: 9,
-  //   quantity: 40,
-  // ),
-  // DrugItemModel(
-  //   id: 'd3',
-  //   name: 'Napa 500mg',
-  //   type: 'Tablet',
-  //   pack: '10 tablet in a strip',
-  //   sale: 2.0,
-  //   pSale: 2.5,
-  //   offer: 1.8,
-  //   quantity: 200,
-  // ),
-  // DrugItemModel(
-  //   id: 'd4',
-  //   name: 'Ace Plus',
-  //   type: 'Tablet',
-  //   pack: '10 tablet in a strip',
-  //   sale: 3.0,
-  //   pSale: 3.5,
-  //   offer: 2.6,
-  //   quantity: 120,
-  // ),
-  // DrugItemModel(
-  //   id: 'd5',
-  //   name: 'Fexo 120mg',
-  //   type: 'Tablet',
-  //   pack: '10 tablet in a strip',
-  //   sale: 12,
-  //   pSale: 13,
-  //   offer: 11,
-  //   quantity: 60,
-  // ),
-];
