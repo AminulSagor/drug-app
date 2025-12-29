@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../core/widgets/app_drawer.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/widgets/bottom_nav.dart';
 import 'models/order_with_details_response_model.dart';
 import 'order_controller.dart';
 import 'widgets/order_details_dialog.dart';
@@ -101,6 +98,17 @@ class OrderView extends GetView<OrderController> {
                         return const _LoadingState();
                       }
 
+                      final items = controller.orders;
+
+                      if (items.isEmpty) {
+                        return _OrderEmptyState(
+                          isSearching: controller.isSearching,
+                          onPrimary: controller.isSearching
+                              ? controller.clearSearch
+                              : controller.refreshPage,
+                        );
+                      }
+
                       return Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFE9ECF3),
@@ -116,10 +124,10 @@ class OrderView extends GetView<OrderController> {
                         ),
                         child: ListView.separated(
                           padding: EdgeInsets.all(8.w),
-                          itemCount: controller.orders.length,
+                          itemCount: items.length,
                           separatorBuilder: (_, __) => 6.verticalSpace,
                           itemBuilder: (_, index) {
-                            final order = controller.orders[index];
+                            final order = items[index];
                             return _OrderRow(order: order);
                           },
                         ),
@@ -136,6 +144,68 @@ class OrderView extends GetView<OrderController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _OrderEmptyState extends StatelessWidget {
+  final bool isSearching;
+  final VoidCallback onPrimary;
+
+  const _OrderEmptyState({required this.isSearching, required this.onPrimary});
+
+  static const _primary = Color(0xFF0D2EBE);
+
+  @override
+  Widget build(BuildContext context) {
+    final title = isSearching ? 'No order found' : 'No orders to show';
+    final subtitle = isSearching
+        ? 'Check the order number and try again.'
+        : 'Tap refresh to load the latest orders.';
+    final btn = isSearching ? 'Clear Search' : 'Refresh';
+
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800,
+                color: Colors.black,
+              ),
+            ),
+            6.verticalSpace,
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
+            ),
+            12.verticalSpace,
+            SizedBox(
+              height: 38.h,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primary,
+                  elevation: 0,
+                ),
+                onPressed: onPrimary,
+                child: Text(
+                  btn,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

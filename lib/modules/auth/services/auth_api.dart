@@ -92,7 +92,6 @@ class AuthApi {
     } on SocketException {
       throw ApiException('No internet connection. Please try again.');
     } catch (e) {
-      dev.log('sendOtp error', error: e);
       throw ApiException('Something went wrong. Please try again.');
     }
   }
@@ -112,7 +111,6 @@ class AuthApi {
     } on SocketException {
       throw ApiException('No internet connection. Please try again.');
     } catch (e) {
-      dev.log('verifyOtp error', error: e);
       throw ApiException('Something went wrong. Please try again.');
     }
   }
@@ -136,7 +134,6 @@ class AuthApi {
     } on SocketException {
       throw ApiException('No internet connection. Please try again.');
     } catch (e) {
-      dev.log('passwordReset error', error: e);
       throw ApiException('Something went wrong. Please try again.');
     }
   }

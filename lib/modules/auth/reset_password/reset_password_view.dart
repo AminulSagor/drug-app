@@ -10,8 +10,6 @@ import 'reset_password_controller.dart';
 class ResetPasswordView extends GetView<ResetPasswordController> {
   const ResetPasswordView({super.key});
 
-  static const _primary = Color(0xFF0D2EBE);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

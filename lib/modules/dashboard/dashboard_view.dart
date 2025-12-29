@@ -4,9 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/app_palette.dart';
-import '../../core/widgets/app_drawer.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/widgets/bottom_nav.dart';
 import 'dashboard_controller.dart';
 import 'models/dashboard_response_model.dart';
 
@@ -349,7 +346,7 @@ class _OrderCard extends StatelessWidget {
                       child: CustomButton(
                         btnText: 'Decline',
                         btnColor: AppPalette.negativeText,
-                        onTap: busy ? null : onDecline, // prevents double tap
+                        onTap: busy ? null : onDecline,
                         textStyle: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,

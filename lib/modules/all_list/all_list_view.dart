@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
-import '../../core/widgets/app_drawer.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/widgets/bottom_nav.dart';
 import 'all_list_controller.dart';
 import 'models/listed_item_model.dart';
 
@@ -56,7 +53,18 @@ class AllListView extends GetView<AllListController> {
 
                       if (items.isEmpty) {
                         return _EmptyState(
-                          onReload: () => controller.fetchPage(page: 1),
+                          title: controller.isSearching
+                              ? 'No match found'
+                              : 'No items to show',
+                          subtitle: controller.isSearching
+                              ? 'Try a different keyword.'
+                              : 'Tap reload to fetch latest stock.',
+                          buttonText: controller.isSearching
+                              ? 'Clear Search'
+                              : 'Reload',
+                          onReload: controller.isSearching
+                              ? controller.clearSearch
+                              : () => controller.fetchPage(page: 1),
                         );
                       }
 
@@ -663,7 +671,16 @@ class _LoadingState extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final VoidCallback onReload;
-  const _EmptyState({required this.onReload});
+  final String title;
+  final String subtitle;
+  final String buttonText;
+
+  const _EmptyState({
+    required this.onReload,
+    this.title = 'No items found',
+    this.subtitle = 'Try reloading.',
+    this.buttonText = 'Reload',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -674,15 +691,21 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'No items found',
-              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700),
+              title,
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w800),
             ),
-            10.verticalSpace,
+            6.verticalSpace,
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
+            ),
+            12.verticalSpace,
             SizedBox(
               height: 38.h,
               child: ElevatedButton(
                 onPressed: onReload,
-                child: const Text('Reload'),
+                child: Text(buttonText),
               ),
             ),
           ],

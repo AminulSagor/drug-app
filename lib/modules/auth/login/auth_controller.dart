@@ -1,5 +1,3 @@
-import 'dart:developer' as dev;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -30,8 +28,6 @@ class AuthController extends GetxController {
   Future<void> restoreSession() async {
     final token = await _storage.readToken();
 
-    dev.log('token: ${token}');
-
     if (token == null || token.trim().isEmpty) {
       user.value = null;
       return;
@@ -47,7 +43,7 @@ class AuthController extends GetxController {
     final token = await _storage.readToken();
 
     if (token != null && token.trim().isNotEmpty) {
-      Get.offAllNamed(Routes.dashboard);
+      Get.offAllNamed(Routes.shell);
     } else {
       Get.offAllNamed(Routes.login);
     }
@@ -66,7 +62,7 @@ class AuthController extends GetxController {
       // ✅ api.login already saved token + user in storage, just keep in memory too
       user.value = res.user;
 
-      Get.offAllNamed(Routes.dashboard);
+      Get.offAllNamed(Routes.shell);
     } on ApiException catch (e) {
       Get.snackbar('Login Failed', e.message);
     } finally {
