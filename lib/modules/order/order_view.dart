@@ -446,6 +446,13 @@ class _OrderRow extends StatelessWidget {
                     style: TextStyle(fontSize: 12.sp),
                   ),
                 ),
+                Text(
+                  formatString(order.type),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12.sp),
+                ),
+                SizedBox(width: 8.w),
                 Row(
                   children: [
                     Icon(status.icon, size: 14.sp, color: status.color),
@@ -621,4 +628,8 @@ class _LoadingState extends StatelessWidget {
       ),
     );
   }
+}
+
+String formatString(String input) {
+  return input.replaceAll('_', ' ');
 }
