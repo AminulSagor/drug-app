@@ -31,7 +31,7 @@ class DashboardApi {
 
   /// ✅ Accept / Decline order
   /// Action_value: 0 decline, 1 accept
-  Future<void> acceptDeclineOrder({
+  Future<String> acceptDeclineOrder({
     required int orderId,
     required int actionValue,
   }) async {
@@ -40,18 +40,33 @@ class DashboardApi {
         '/pharmacy/accept_decline_order-for-mobile-app',
         data: {
           "order_id": orderId,
-          "Action_value": actionValue, // keep exact key casing
+          "action_value": actionValue, // keep exact key casing
         },
       );
 
-      // optional validation (don’t fail if backend returns plain text)
-      if (res.statusCode != null && res.statusCode! >= 400) {
-        throw ApiException('Request failed. Please try again.');
+      final data = res.data;
+      if (data is! Map<String, dynamic>) {
+        throw ApiException('Unexpected response from server.');
       }
+
+      final msg =
+          _extractApiMessage(data) ??
+          (actionValue == 1
+              ? 'Order confirmed successfully'
+              : 'Order declined successfully');
+
+      final hasStatus = data.containsKey('status');
+      if (hasStatus && !_isSuccessStatus(data['status'])) {
+        throw ApiException(msg);
+      }
+
+      return msg;
     } on DioException catch (e) {
       throw _mapDioToApiException(e);
     } on SocketException {
       throw ApiException('No internet connection. Please try again.');
+    } on ApiException {
+      rethrow;
     } catch (_) {
       throw ApiException('Something went wrong. Please try again.');
     }
@@ -64,8 +79,7 @@ class DashboardApi {
     final data = e.response?.data;
 
     if (data is Map<String, dynamic>) {
-      final m = data['message'];
-      if (m is String && m.trim().isNotEmpty) msg = m;
+      msg = _extractApiMessage(data) ?? msg;
     }
 
     if (e.type == DioExceptionType.connectionTimeout ||
@@ -75,5 +89,33 @@ class DashboardApi {
     }
 
     return ApiException(msg, statusCode: status);
+  }
+
+  String? _extractApiMessage(Map<String, dynamic> data) {
+    final message = data['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
+    }
+
+    final msg = data['msg'];
+    if (msg is String && msg.trim().isNotEmpty) {
+      return msg.trim();
+    }
+
+    return null;
+  }
+
+  bool _isSuccessStatus(dynamic status) {
+    if (status is bool) return status;
+    if (status is num) return status == 1;
+    if (status is String) {
+      final normalized = status.trim().toLowerCase();
+      return normalized == 'success' ||
+          normalized == 'ok' ||
+          normalized == 'true' ||
+          normalized == '1';
+    }
+
+    return false;
   }
 }

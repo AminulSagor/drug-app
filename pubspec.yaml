@@ -20,6 +20,8 @@ dependencies:
   photo_view: ^0.15.0
 
   cupertino_icons: ^1.0.8
+  dio_pretty_logger: ^1.0.4
+  pretty_dio_logger: ^1.4.0
 
 dev_dependencies:
   flutter_test:

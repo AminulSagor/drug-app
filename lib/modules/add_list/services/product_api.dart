@@ -13,7 +13,7 @@ class ProductApi {
   Future<List<DrugItemModel>> searchProducts(String query) async {
     try {
       final res = await _dio.get(
-        '/pharmacy/product/search',
+        '/product/search',
         queryParameters: {'productName': query},
       );
 
@@ -84,10 +84,10 @@ class ProductApi {
 
 class AddUpdateItemRequest {
   final int productId;
-  final num stockMrp;
-  final num discountPrice; // sale
-  final num peakHourPrice; // p-sale
-  final num offerPrice; // m-offer
+  final double stockMrp;
+  final double discountPrice; // sale
+  final double peakHourPrice; // p-sale
+  final double offerPrice; // m-offer
   final int qty; // max-acpt qty
 
   const AddUpdateItemRequest({

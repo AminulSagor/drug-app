@@ -162,6 +162,7 @@ class OrderPrescriptionModel {
   factory OrderPrescriptionModel.fromJson(Map<String, dynamic> json) {
     // Your correct field: prescription_copy_path ✅
     final url = _s(
+      json['prescription_copy_image_path'] ??
       json['prescription_copy_path'] ??
           json['file_url'] ??
           json['url'] ??
@@ -292,7 +293,7 @@ class OrderWithDetailsModel {
               .toList()
         : <OrderItemApiModel>[];
 
-    final rawUser = json['users'];
+    final rawUser = json['user'] ?? json['users'];
     final OrderUserModel? u = (rawUser is Map<String, dynamic>)
         ? OrderUserModel.fromJson(rawUser)
         : null;
@@ -303,16 +304,39 @@ class OrderWithDetailsModel {
       id: _i(json['id']),
       userId: _i(json['user_id']),
       pharmacyId: _i(json['pharmacy_id']),
-      orderNo: _s(json['orderNo']),
+      orderNo: _s(json['orderNo'] ?? json['order_no']),
       type: _s(json['type']),
       area: _s(json['area']),
       paymentMethod: _s(json['payment_method']),
-      offerTotalAmount: _n(json['offer_total_amount']),
+      offerTotalAmount: _n(
+        json['offer_total_amount'] ??
+            json['subtotal'] ??
+            json['calculated_subtotal'],
+      ),
       status: _s(json['status']),
-      deliveryCharge: _n(json['deliveryCharge']),
-      offerDeliveryCharge: _n(json['offer_deliveryCharge']),
-      offerGrandTotal: _n(json['offer_grandTotal']),
-      comissionAmount: _n(json['comission_amount']),
+      deliveryCharge: _n(
+        json['deliveryCharge'] ??
+            json['delivery_charge'] ??
+            json['platform_charge'] ??
+            json['calculated_platform_charge'],
+      ),
+      offerDeliveryCharge: _n(
+        json['offer_deliveryCharge'] ??
+            json['offer_delivery_charge'] ??
+            json['platform_charge'] ??
+            json['calculated_platform_charge'],
+      ),
+      offerGrandTotal: _n(
+        json['offer_grandTotal'] ??
+            json['offer_grand_total'] ??
+            json['payable_to_pharmacy'] ??
+            json['subtotal'],
+      ),
+      comissionAmount: _n(
+        json['comission_amount'] ??
+            json['commission_amount'] ??
+            json['platform_margin'],
+      ),
       deliveryConfirmationCode: _i(json['delivery_confirmation_code']),
       orderDate: _s(json['orderDate']),
       coupon: json['coupon'],
@@ -362,9 +386,9 @@ class OrderUserModel {
   factory OrderUserModel.fromJson(Map<String, dynamic> json) {
     return OrderUserModel(
       id: _i(json['id']),
-      firstName: _s(json['firstName']),
-      lastName: _s(json['lastName']),
-      phoneNumber: _s(json['phoneNumber']),
+      firstName: _s(json['firstName'] ?? json['first_name']),
+      lastName: _s(json['lastName'] ?? json['last_name']),
+      phoneNumber: _s(json['phoneNumber'] ?? json['phone_number']),
     );
   }
 }
@@ -421,10 +445,12 @@ class OrderItemApiModel {
       id: _i(json['id']),
       orderId: _i(json['order_id']),
       productId: _i(json['product_id']),
-      discountUnitPrice: _n(json['discount_unit_price']),
-      offerUnitPrice: _n(json['offer_unit_price']),
+      discountUnitPrice: _n(
+        json['discount_unit_price'] ?? json['unit_price'],
+      ),
+      offerUnitPrice: _n(json['offer_unit_price'] ?? json['unit_price']),
       quantity: _i(json['quantity']),
-      totalPrice: _n(json['total_price']),
+      totalPrice: _n(json['total_price'] ?? json['unit_total']),
       createdAt: _s(json['created_at']),
       updatedAt: _s(json['updated_at']),
       product: p,

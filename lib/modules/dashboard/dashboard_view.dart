@@ -236,7 +236,7 @@ class _OrderCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '\$ ${order.offerTotalAmount}',
+                  '\৳ ${order.offerTotalAmount}',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16.sp,
@@ -309,7 +309,7 @@ class _OrderCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Rate : \$ ${item.discountUnitPrice}',
+                      'Rate : \৳ ${item.discountUnitPrice}',
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w400,
@@ -325,7 +325,7 @@ class _OrderCard extends StatelessWidget {
                   ],
                 ),
                 trailing: Text(
-                  'TOTAL\n\$ ${item.totalPrice}',
+                  'TOTAL\n\৳ ${item.totalPrice}',
                   textAlign: TextAlign.right,
                   style: const TextStyle(color: AppPalette.primary),
                 ),
@@ -411,7 +411,7 @@ class _DashboardStats extends StatelessWidget {
             Row(
               children: [
                 _StatTile(
-                  'M-commission',
+                  'Balance',
                   c.totalCommission.value,
                   iconPath: 'assets/dollar.png',
                 ),

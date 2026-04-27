@@ -208,10 +208,10 @@ class AllListController extends GetxController {
     if (isEditLoading.value) return;
 
     final mrp = item.retailMaxPrice;
-    final sale = _parseNum(editSaleCtrl.text);
-    final pSale = _parseNum(editPSaleCtrl.text);
-    final offer = _parseNum(editOfferCtrl.text);
-    final qty = _parseInt(editQtyCtrl.text);
+    final sale = double.tryParse(editSaleCtrl.text);
+    final pSale = double.tryParse(editPSaleCtrl.text);
+    final offer = double.tryParse(editOfferCtrl.text);
+    final qty = int.tryParse(editQtyCtrl.text);
 
     if (sale == null || pSale == null || offer == null || qty == null) {
       Get.snackbar('Invalid', 'Please enter valid numbers in all fields.');
@@ -243,9 +243,9 @@ class AllListController extends GetxController {
         AddUpdateItemRequest(
           productId: item.id,
           stockMrp: item.retailMaxPrice,
-          discountPrice: sale, // Sale UI -> discount_price
-          peakHourPrice: pSale, // P-sale UI -> peak_hour_price
-          offerPrice: offer, // M-offer UI -> offer_price
+          discountPrice: sale.toDouble(), // Sale UI -> discount_price
+          peakHourPrice: pSale.toDouble(), // P-sale UI -> peak_hour_price
+          offerPrice: offer.toDouble(), // M-offer UI -> offer_price
           qty: qty, // Max-Acpt QTY
         ),
       );
@@ -267,12 +267,12 @@ class AllListController extends GetxController {
     if (isEditLoading.value) return;
 
     final sale =
-        _parseNum(editSaleCtrl.text) ?? (item.currentStock?.discountPrice ?? 0);
+        double.tryParse(editSaleCtrl.text) ?? (item.currentStock?.discountPrice ?? 0);
     final pSale =
-        _parseNum(editPSaleCtrl.text) ??
+        double.tryParse(editPSaleCtrl.text) ??
         (item.currentStock?.peakHourPrice ?? 0);
     final offer =
-        _parseNum(editOfferCtrl.text) ??
+        double.tryParse(editOfferCtrl.text) ??
         (item.currentStock?.mediboyOfferPrice ?? 0);
 
     final mrp = item.retailMaxPrice;
@@ -297,9 +297,9 @@ class AllListController extends GetxController {
         AddUpdateItemRequest(
           productId: item.id,
           stockMrp: item.retailMaxPrice,
-          discountPrice: sale,
-          peakHourPrice: pSale,
-          offerPrice: offer,
+          discountPrice: sale.toDouble(),
+          peakHourPrice: pSale.toDouble(),
+          offerPrice: offer.toDouble(),
           qty: 0, // ✅ stock-out
         ),
       );

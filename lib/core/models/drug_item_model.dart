@@ -7,9 +7,16 @@ class DrugCategoryModel {
   const DrugCategoryModel({required this.id, required this.name});
 
   factory DrugCategoryModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString()) ?? 0;
+    }
+
     return DrugCategoryModel(
-      id: (json['id'] ?? 0) as int,
-      name: (json['name'] ?? '') as String,
+      id: parseInt(json['id']),
+      name: (json['name'] ?? '').toString(),
     );
   }
 
@@ -23,9 +30,16 @@ class DrugCompanyModel {
   const DrugCompanyModel({required this.id, required this.name});
 
   factory DrugCompanyModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString()) ?? 0;
+    }
+
     return DrugCompanyModel(
-      id: (json['id'] ?? 0) as int,
-      name: (json['name'] ?? '') as String,
+      id: parseInt(json['id']),
+      name: (json['name'] ?? '').toString(),
     );
   }
 
@@ -42,7 +56,7 @@ class DrugItemModel {
   final String genericName;
 
   /// API: retail_max_price (string)
-  final num retailMaxPrice;
+  final double retailMaxPrice;
 
   /// API: unit_in_pack
   final String unitInPack;
@@ -88,27 +102,40 @@ class DrugItemModel {
   });
 
   factory DrugItemModel.fromJson(Map<String, dynamic> json) {
-    num parseNum(dynamic v) {
+    int parseInt(dynamic v) {
       if (v == null) return 0;
-      if (v is num) return v;
-      return num.tryParse(v.toString()) ?? 0;
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse(v.toString()) ?? 0;
     }
 
+    double parseDouble(dynamic v) {
+      if (v == null) return 0;
+      if (v is num) return v.toDouble();
+      return double.tryParse(v.toString()) ?? 0;
+    }
+
+    String parseString(dynamic v) => (v ?? '').toString();
+
     return DrugItemModel(
-      id: (json['id'] ?? 0) as int,
-      productName: (json['productName'] ?? '') as String,
-      genericName: (json['genericName'] ?? '') as String,
-      retailMaxPrice: parseNum(json['retail_max_price']),
-      unitInPack: (json['unit_in_pack'] ?? '') as String,
-      strength: (json['quantity'] ?? '') as String,
-      type: (json['type'] ?? '') as String,
-      status: (json['status'] ?? '') as String,
-      cartText: (json['cart_text'] ?? '') as String,
-      coverImage: (json['coverImage'] ?? '') as String,
-      categoryId: (json['category_id'] ?? 0) as int,
-      companyId: (json['company_id'] ?? 0) as int,
-      coverImagePath: (json['product_cover_image_path'] ?? '') as String,
-      images: (json['images'] as List?) ?? const [],
+      id: parseInt(json['id']),
+      productName: parseString(json['productName'] ?? json['name']),
+      genericName: parseString(json['genericName'] ?? json['generic_name']),
+      retailMaxPrice: parseDouble(json['retail_max_price']).toDouble(),
+      unitInPack: parseString(json['unit_in_pack']),
+      strength: parseString(json['quantity']),
+      type: parseString(json['type']),
+      status: parseString(json['status']),
+      cartText: parseString(json['cart_text']),
+      coverImage: parseString(json['coverImage']),
+      categoryId: parseInt(json['category_id']),
+      companyId: parseInt(json['company_id']),
+      coverImagePath: parseString(
+        json['product_cover_image_path'] ?? json['cover_image_path'],
+      ),
+      images: (json['images'] is List)
+          ? List<dynamic>.from(json['images'] as List)
+          : const [],
       category: json['category'] is Map<String, dynamic>
           ? DrugCategoryModel.fromJson(json['category'] as Map<String, dynamic>)
           : null,

@@ -4,10 +4,17 @@ class ListedItemCompanyModel {
 
   const ListedItemCompanyModel({required this.id, required this.name});
 
+  static int _parseInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
   factory ListedItemCompanyModel.fromJson(Map<String, dynamic> json) {
     return ListedItemCompanyModel(
-      id: (json['id'] ?? 0) as int,
-      name: (json['name'] ?? '') as String,
+      id: _parseInt(json['id']),
+      name: (json['name'] ?? '').toString(),
     );
   }
 
@@ -50,19 +57,26 @@ class ListedCurrentStockModel {
     return num.tryParse(v.toString()) ?? 0;
   }
 
+  static int _parseInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
   factory ListedCurrentStockModel.fromJson(Map<String, dynamic> json) {
     return ListedCurrentStockModel(
-      id: (json['id'] ?? 0) as int,
-      pharmacyId: (json['pharmacy_id'] ?? 0) as int,
-      productId: (json['product_id'] ?? 0) as int,
-      inStock: (json['in_stock'] ?? 0) as int,
-      stockAlert: (json['stock_alert'] ?? 0) as int,
+      id: _parseInt(json['id']),
+      pharmacyId: _parseInt(json['pharmacy_id']),
+      productId: _parseInt(json['product_id']),
+      inStock: _parseInt(json['in_stock']),
+      stockAlert: _parseInt(json['stock_alert']),
       salePrice: _parseNum(json['sale_price']),
       discountPrice: _parseNum(json['discount_price']),
       peakHourPrice: _parseNum(json['peak_hour_price']),
       mediboyOfferPrice: _parseNum(json['mediboy_offer_price']),
-      createdAt: (json['created_at'] ?? '') as String,
-      updatedAt: (json['updated_at'] ?? '') as String,
+      createdAt: (json['created_at'] ?? '').toString(),
+      updatedAt: (json['updated_at'] ?? '').toString(),
     );
   }
 
@@ -87,7 +101,7 @@ class ListedItemModel {
   final String productName;
   final String genericName;
 
-  final num retailMaxPrice;
+  final double retailMaxPrice;
 
   final int cartQtyInc;
   final String cartText;
@@ -136,32 +150,42 @@ class ListedItemModel {
     return num.tryParse(v.toString()) ?? 0;
   }
 
+  static int _parseInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
   factory ListedItemModel.fromJson(Map<String, dynamic> json) {
+    final companyJson = json['company'];
+    final currentStockJson = json['current_stock'] ?? json['currentStock'];
+
     return ListedItemModel(
-      id: (json['id'] ?? 0) as int,
-      productName: (json['productName'] ?? '') as String,
-      genericName: (json['genericName'] ?? '') as String,
-      retailMaxPrice: _parseNum(json['retail_max_price']),
-      cartQtyInc: (json['cart_qty_inc'] ?? 0) as int,
-      cartText: (json['cart_text'] ?? '') as String,
-      unitInPack: (json['unit_in_pack'] ?? '') as String,
-      type: (json['type'] ?? '') as String,
-      quantity: (json['quantity'] ?? '') as String,
-      prescription: (json['prescription'] ?? '') as String,
-      feature: (json['feature'] ?? '') as String,
-      status: (json['status'] ?? '') as String,
-      coverImage: (json['coverImage'] ?? '') as String,
-      companyId: (json['company_id'] ?? 0) as int,
-      categoryId: (json['category_id'] ?? 0) as int,
-      productCoverImagePath: (json['product_cover_image_path'] ?? '') as String,
-      company: json['company'] is Map<String, dynamic>
+      id: _parseInt(json['id']),
+      productName: (json['productName'] ?? '').toString(),
+      genericName: (json['genericName'] ?? '').toString(),
+      retailMaxPrice: _parseNum(json['retail_max_price']).toDouble(),
+      cartQtyInc: _parseInt(json['cart_qty_inc']),
+      cartText: (json['cart_text'] ?? '').toString(),
+      unitInPack: (json['unit_in_pack'] ?? '').toString(),
+      type: (json['type'] ?? '').toString(),
+      quantity: (json['quantity'] ?? '').toString(),
+      prescription: (json['prescription'] ?? '').toString(),
+      feature: (json['feature'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      coverImage: (json['coverImage'] ?? '').toString(),
+      companyId: _parseInt(json['company_id']),
+      categoryId: _parseInt(json['category_id']),
+      productCoverImagePath: (json['product_cover_image_path'] ?? '').toString(),
+      company: companyJson is Map
           ? ListedItemCompanyModel.fromJson(
-              json['company'] as Map<String, dynamic>,
+              Map<String, dynamic>.from(companyJson as Map),
             )
           : null,
-      currentStock: json['current_stock'] is Map<String, dynamic>
+      currentStock: currentStockJson is Map
           ? ListedCurrentStockModel.fromJson(
-              json['current_stock'] as Map<String, dynamic>,
+              Map<String, dynamic>.from(currentStockJson as Map),
             )
           : null,
     );

@@ -123,6 +123,7 @@ class OrderView extends GetView<OrderController> {
                           ],
                         ),
                         child: ListView.separated(
+                          controller: controller.scrollController,
                           padding: EdgeInsets.all(8.w),
                           itemCount: items.length,
                           separatorBuilder: (_, __) => 6.verticalSpace,
@@ -134,6 +135,25 @@ class OrderView extends GetView<OrderController> {
                       );
                     }),
                   ),
+
+                  Obx(() {
+                    if (!controller.isLoadingMore.value) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8.h),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20.w,
+                          height: 20.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
 
                   10.verticalSpace,
 
@@ -356,6 +376,7 @@ class _OrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _statusUiFromApi(order.status);
+    final platformCharge = order.offerDeliveryCharge.abs();
 
     return InkWell(
       onTap: () => Get.dialog(OrderDetailsDialog(order: order)),
@@ -382,10 +403,19 @@ class _OrderRow extends StatelessWidget {
                 ),
                 10.horizontalSpace,
                 Text(
-                  '\$ ${order.offerTotalAmount}',
+                  '\৳ ${order.offerTotalAmount}',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w900,
+                    color: Colors.green,
+                  ),
+                ),
+                10.horizontalSpace,
+                Text(
+                  '\৳ -$platformCharge',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w400,
                     color: Colors.green,
                   ),
                 ),
@@ -518,7 +548,12 @@ class _PaginationBar extends StatelessWidget {
               children: [
                 _CircleBtn(
                   icon: Icons.arrow_back,
-                  onTap: c.currentPage.value <= 1 ? null : c.prevPage,
+                  onTap:
+                      c.currentPage.value <= 1 ||
+                          c.isLoading.value ||
+                          c.isLoadingMore.value
+                      ? null
+                      : c.prevPage,
                 ),
                 10.horizontalSpace,
                 Text(
@@ -531,7 +566,10 @@ class _PaginationBar extends StatelessWidget {
                 10.horizontalSpace,
                 _CircleBtn(
                   icon: Icons.arrow_forward,
-                  onTap: c.currentPage.value >= c.totalPages.value
+                  onTap:
+                      c.currentPage.value >= c.totalPages.value ||
+                          c.isLoading.value ||
+                          c.isLoadingMore.value
                       ? null
                       : c.nextPage,
                 ),

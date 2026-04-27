@@ -148,16 +148,38 @@ class PendingOrderModel {
       id: _parseInt(json['id']),
       userId: _parseInt(json['user_id']),
       pharmacyId: _parseInt(json['pharmacy_id']),
-      orderNo: (json['orderNo'] ?? '').toString(),
+      orderNo: (json['orderNo'] ?? json['order_no'] ?? '').toString(),
       type: (json['type'] ?? '').toString(),
       area: (json['area'] ?? '').toString(),
       paymentMethod: (json['payment_method'] ?? '').toString(),
-      offerTotalAmount: _parseNum(json['offer_total_amount']),
+      offerTotalAmount: _parseNum(
+        json['offer_total_amount'] ??
+            json['subtotal'] ??
+            json['calculated_subtotal'],
+      ),
       status: (json['status'] ?? '').toString(),
-      deliveryCharge: _parseNum(json['deliveryCharge']),
-      offerDeliveryCharge: _parseNum(json['offer_deliveryCharge']),
-      offerGrandTotal: _parseNum(json['offer_grandTotal']),
-      comissionAmount: _parseNum(json['comission_amount']),
+      deliveryCharge: _parseNum(
+        json['deliveryCharge'] ??
+            json['delivery_charge'] ??
+            json['platform_charge'],
+      ),
+      offerDeliveryCharge: _parseNum(
+        json['offer_deliveryCharge'] ??
+            json['offer_delivery_charge'] ??
+            json['platform_charge'] ??
+            json['calculated_platform_charge'],
+      ),
+      offerGrandTotal: _parseNum(
+        json['offer_grandTotal'] ??
+            json['offer_grand_total'] ??
+            json['payable_to_pharmacy'] ??
+            json['subtotal'],
+      ),
+      comissionAmount: _parseNum(
+        json['comission_amount'] ??
+            json['commission_amount'] ??
+            json['platform_margin'],
+      ),
       deliveryConfirmationCode: _parseInt(json['delivery_confirmation_code']),
       orderDate: (json['orderDate'] ?? '').toString(),
       coupon: json['coupon'],
@@ -219,10 +241,14 @@ class PendingOrderItemModel {
       id: _parseInt(json['id']),
       orderId: _parseInt(json['order_id']),
       productId: _parseInt(json['product_id']),
-      discountUnitPrice: _parseNum(json['discount_unit_price']),
-      offerUnitPrice: _parseNum(json['offer_unit_price']),
+      discountUnitPrice: _parseNum(
+        json['discount_unit_price'] ?? json['unit_price'],
+      ),
+      offerUnitPrice: _parseNum(
+        json['offer_unit_price'] ?? json['unit_price'],
+      ),
       quantity: _parseInt(json['quantity']),
-      totalPrice: _parseNum(json['total_price']),
+      totalPrice: _parseNum(json['total_price'] ?? json['unit_total']),
       createdAt: (json['created_at'] ?? '').toString(),
       updatedAt: (json['updated_at'] ?? '').toString(),
       product: product,

@@ -482,7 +482,7 @@ class _RateText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sale : \$ $sale,\nP-sale : \$ $pSale,',
+          'Sale : \৳ $sale,\nP-sale : \৳ $pSale,',
           softWrap: true,
           maxLines: 3, // ✅ wrap
           overflow: TextOverflow.ellipsis,
@@ -495,7 +495,7 @@ class _RateText extends StatelessWidget {
         ),
         4.verticalSpace,
         Text(
-          'Offer : \$ $offer',
+          'Offer : \৳ $offer',
           softWrap: true,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

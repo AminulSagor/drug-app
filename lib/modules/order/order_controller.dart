@@ -16,6 +16,9 @@ class OrderController extends GetxController {
 
   /// loading for list area
   final isLoading = false.obs;
+  final isLoadingMore = false.obs;
+
+  final scrollController = ScrollController();
 
   /// ✅ loading for "Peaked" action (per-order)
   final clearingOrderIds = <int>{}.obs;
@@ -45,6 +48,7 @@ class OrderController extends GetxController {
   Timer? _searchDebounce;
 
   int _searchReqId = 0; // to ignore stale responses
+  bool _isPageRequestInFlight = false;
 
   bool get isSearching => searchQuery.value.trim().isNotEmpty;
 
@@ -65,6 +69,7 @@ class OrderController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    scrollController.addListener(_onListScroll);
     _initialLoadAndStartPolling();
   }
 
@@ -83,6 +88,9 @@ class OrderController extends GetxController {
   void onClose() {
     _pollTimer?.cancel();
     _searchDebounce?.cancel();
+    scrollController
+      ..removeListener(_onListScroll)
+      ..dispose();
     searchCtrl.dispose();
     super.onClose();
   }
@@ -95,8 +103,18 @@ class OrderController extends GetxController {
     await fetchPage(page: currentPage.value, showLoader: true);
   }
 
-  Future<void> fetchPage({required int page, required bool showLoader}) async {
+  Future<void> fetchPage({
+    required int page,
+    required bool showLoader,
+    bool showBottomLoader = false,
+  }) async {
+    if (_isPageRequestInFlight) return;
+    _isPageRequestInFlight = true;
+
     if (showLoader) isLoading.value = true;
+    if (showBottomLoader) isLoadingMore.value = true;
+
+    final previousPage = currentPage.value;
 
     try {
       final res = await _api.getOrdersWithDetails(page: page);
@@ -117,25 +135,53 @@ class OrderController extends GetxController {
       _lastListTotalItems = totalItems.value;
       _lastListPerPage = pageSize.value;
       _lastListData = List<OrderWithDetailsModel>.from(res.orders.data);
+
+      if (!isSearching &&
+          currentPage.value != previousPage &&
+          scrollController.hasClients) {
+        scrollController.jumpTo(0);
+      }
     } on ApiException catch (e) {
       Get.snackbar('Error', e.message);
     } catch (_) {
       Get.snackbar('Error', 'Something went wrong. Please try again.');
     } finally {
       if (showLoader) isLoading.value = false;
+      if (showBottomLoader) isLoadingMore.value = false;
+      _isPageRequestInFlight = false;
     }
   }
 
-  void nextPage() {
+  void nextPage({bool showLoader = true, bool showBottomLoader = false}) {
     if (isSearching) return;
     if (currentPage.value >= totalPages.value) return;
-    fetchPage(page: currentPage.value + 1, showLoader: true);
+    fetchPage(
+      page: currentPage.value + 1,
+      showLoader: showLoader,
+      showBottomLoader: showBottomLoader,
+    );
   }
 
   void prevPage() {
     if (isSearching) return;
     if (currentPage.value <= 1) return;
     fetchPage(page: currentPage.value - 1, showLoader: true);
+  }
+
+  void _onListScroll() {
+    if (!scrollController.hasClients) return;
+    if (isSearching) return;
+    if (_isPageRequestInFlight || isLoading.value || isLoadingMore.value) {
+      return;
+    }
+    if (currentPage.value >= totalPages.value) return;
+
+    final position = scrollController.position;
+    const triggerOffset = 140.0;
+
+    if (position.pixels >= (position.maxScrollExtent - triggerOffset)) {
+      nextPage(showLoader: false, showBottomLoader: true);
+    }
   }
 
   void onSearchChanged(String v) {

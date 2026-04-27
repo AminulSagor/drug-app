@@ -120,10 +120,12 @@ class DashboardController extends GetxController {
 
     isOrderLoading.value = true;
     try {
-      await _api.acceptDeclineOrder(
+      final msg = await _api.acceptDeclineOrder(
         orderId: order.id, // ✅ use order id
         actionValue: actionValue,
       );
+
+      Get.snackbar('Success', msg);
 
       // ✅ refresh dashboard so stats + pending orders update from server
       await _fetchDashboard(showLoader: false);

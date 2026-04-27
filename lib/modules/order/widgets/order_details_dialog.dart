@@ -42,7 +42,7 @@ class OrderDetailsDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '# ${order.orderNo}   \$ ${order.offerTotalAmount}   Com. \$ ${order.comissionAmount}',
+                      '# ${order.orderNo}   \৳ ${order.offerTotalAmount}   Com. \৳ ${order.comissionAmount}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -269,7 +269,7 @@ class _OrderItemCard extends StatelessWidget {
                 ),
                 4.verticalSpace,
                 Text(
-                  'Rate : \$ ${item.discountUnitPrice}',
+                  'Rate : \৳ ${item.discountUnitPrice}',
                   style: TextStyle(fontSize: 12.sp),
                 ),
                 Text(
@@ -291,7 +291,7 @@ class _OrderItemCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '\$ ${item.totalPrice}',
+                '\৳ ${item.totalPrice}',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w800,

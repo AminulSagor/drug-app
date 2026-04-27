@@ -25,21 +25,26 @@ class CurrentStockPage {
     required this.total,
   });
 
+  static int _parseInt(dynamic value, {required int fallback}) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? fallback;
+  }
+
   factory CurrentStockPage.fromJson(Map<String, dynamic> json) {
     final list = (json['data'] as List?) ?? const [];
     return CurrentStockPage(
-      currentPage: (json['current_page'] ?? 1) as int,
+      currentPage: _parseInt(json['current_page'], fallback: 1),
       data: list
           .whereType<Map<String, dynamic>>()
           .map((e) => ListedItemModel.fromJson(e))
           .toList(),
-      from: (json['from'] ?? 0) as int,
-      to: (json['to'] ?? 0) as int,
-      lastPage: (json['last_page'] ?? 1) as int,
-      perPage: (json['per_page'] ?? 20) is int
-          ? (json['per_page'] ?? 20) as int
-          : int.tryParse('${json['per_page']}') ?? 20,
-      total: (json['total'] ?? 0) as int,
+      from: _parseInt(json['from'], fallback: 0),
+      to: _parseInt(json['to'], fallback: 0),
+      lastPage: _parseInt(json['last_page'], fallback: 1),
+      perPage: _parseInt(json['per_page'], fallback: 20),
+      total: _parseInt(json['total'], fallback: 0),
     );
   }
 }

@@ -86,9 +86,9 @@ class AddListController extends GetxController {
     }
 
     // Parse input
-    final sale = num.tryParse(saleCtrl.text.trim());
-    final pSale = num.tryParse(pSaleCtrl.text.trim());
-    final offer = num.tryParse(offerCtrl.text.trim());
+    final sale = double.tryParse(saleCtrl.text.trim());
+    final pSale = double.tryParse(pSaleCtrl.text.trim());
+    final offer = double.tryParse(offerCtrl.text.trim());
     final qty = int.tryParse(maxQtyCtrl.text.trim());
 
     if (sale == null || pSale == null || offer == null || qty == null) {
