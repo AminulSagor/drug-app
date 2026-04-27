@@ -407,6 +407,7 @@ class _RowCard extends StatelessWidget {
           Expanded(
             flex: 18,
             child: _RateText(
+              mrp: item.retailMaxPrice,
               sale: item.sale,
               pSale: item.pSale,
               offer: item.offer,
@@ -466,11 +467,13 @@ class _RowCard extends StatelessWidget {
 }
 
 class _RateText extends StatelessWidget {
+  final num mrp;
   final num sale;
   final num pSale;
   final num offer;
 
   const _RateText({
+    required this.mrp,
     required this.sale,
     required this.pSale,
     required this.offer,
@@ -482,7 +485,7 @@ class _RateText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sale : \৳ $sale,\nP-sale : \৳ $pSale,',
+          'MRP : ৳ $mrp\nSale : ৳ $sale\nP-sale : ৳ $pSale',
           softWrap: true,
           maxLines: 3, // ✅ wrap
           overflow: TextOverflow.ellipsis,
@@ -495,7 +498,7 @@ class _RateText extends StatelessWidget {
         ),
         4.verticalSpace,
         Text(
-          'Offer : \৳ $offer',
+          'Offer : ৳ $offer',
           softWrap: true,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

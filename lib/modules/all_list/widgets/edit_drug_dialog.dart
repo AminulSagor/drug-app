@@ -77,7 +77,7 @@ class EditDrugDialog extends GetView<AllListController> {
                         ),
                       ),
                       Text(
-                        '৳ ${item.currentStock?.salePrice.toString() ?? '0'} ',
+                        '৳ ${item.retailMaxPrice}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
