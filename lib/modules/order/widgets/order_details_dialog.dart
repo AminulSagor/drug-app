@@ -42,12 +42,12 @@ class OrderDetailsDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '# ${order.orderNo}   \৳ ${order.offerTotalAmount}   Com. \৳ ${order.comissionAmount}',
+                      '# ${order.orderNo}   \৳ ${order.subtotal}  (${order.collectLabel})',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
@@ -75,16 +75,16 @@ class OrderDetailsDialog extends StatelessWidget {
                     order.customerPhone,
                     style: TextStyle(fontSize: 12.sp, color: Colors.white),
                   ),
-                  10.horizontalSpace,
-                  Icon(Icons.person, size: 14.sp, color: Colors.white),
-                  4.horizontalSpace,
-                  Text(
-                    order.customerFirstName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                  ),
-                  10.horizontalSpace,
+                  // 10.horizontalSpace,
+                  // Icon(Icons.person, size: 14.sp, color: Colors.white),
+                  // 4.horizontalSpace,
+                  // Text(
+                  //   order.customerFirstName,
+                  //   maxLines: 1,
+                  //   overflow: TextOverflow.ellipsis,
+                  //   style: TextStyle(fontSize: 12.sp, color: Colors.white),
+                  // ),
+                  10.w.horizontalSpace,
                   Icon(statusUi.icon, size: 14.sp, color: statusUi.color),
                   4.horizontalSpace,
                   Text(
@@ -95,7 +95,7 @@ class OrderDetailsDialog extends StatelessWidget {
                       color: statusUi.color,
                     ),
                   ),
-                  10.horizontalSpace,
+                  10.w.horizontalSpace,
                   Image.asset(
                     order.isSelfPickup
                         ? 'assets/pickup_icon.png'
@@ -107,7 +107,12 @@ class OrderDetailsDialog extends StatelessWidget {
                   4.horizontalSpace,
                   Text(
                     order.isSelfPickup ? 'Self-Pickup' : 'Home-Delivery',
-                    style: TextStyle(fontSize: 11.sp, color: Colors.white),
+                    style: TextStyle(fontSize: 12.sp, color: Colors.white),
+                  ),
+                  10.w.horizontalSpace,
+                  Text(
+                    '৳. -${order.calculatedPlatformCharge}',
+                    style: TextStyle(fontSize: 12.sp, color: Colors.white),
                   ),
                 ],
               ),
@@ -176,7 +181,7 @@ class OrderDetailsDialog extends StatelessWidget {
                                 ),
                               )
                             : Text(
-                                'Peaked',
+                                'Picked',
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w800,
@@ -204,7 +209,7 @@ class _OrderItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = item.product;
-    final img = (p?.coverImagePath ?? '').trim();
+    final img = (p?.productCoverImagePath ?? '').trim();
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -259,17 +264,50 @@ class _OrderItemCard extends StatelessWidget {
                   ),
                 ),
                 2.verticalSpace,
-                Text(
-                  (p?.type ?? '').toLowerCase(),
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.blue,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999.w),
+                        border: Border.all(color: Colors.grey, width: .6),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      child: Text(
+                        (p?.type ?? '').toLowerCase(),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    5.w.horizontalSpace,
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999.w),
+                        border: Border.all(color: Colors.grey, width: .6),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      child: Text(
+                        (p?.unitInPack ?? '').toLowerCase(),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 4.verticalSpace,
                 Text(
-                  'Rate : \৳ ${item.discountUnitPrice}',
+                  'Unit Price : \৳ ${item.unitPrice}',
                   style: TextStyle(fontSize: 12.sp),
                 ),
                 Text(
@@ -291,7 +329,7 @@ class _OrderItemCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '\৳ ${item.totalPrice}',
+                '\৳ ${item.unitTotal}',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w800,

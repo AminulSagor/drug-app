@@ -376,7 +376,7 @@ class _OrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _statusUiFromApi(order.status);
-    final platformCharge = order.offerDeliveryCharge.abs();
+    final platformCharge = order.calculatedPlatformCharge.abs();
 
     return InkWell(
       onTap: () => Get.dialog(OrderDetailsDialog(order: order)),
@@ -403,7 +403,7 @@ class _OrderRow extends StatelessWidget {
                 ),
                 10.horizontalSpace,
                 Text(
-                  '\৳ ${order.offerTotalAmount}',
+                  '\৳ ${order.subtotal}',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w900,
@@ -435,17 +435,24 @@ class _OrderRow extends StatelessWidget {
                 Icon(Icons.phone, size: 14.sp),
                 4.horizontalSpace,
                 Text(order.customerPhone, style: TextStyle(fontSize: 12.sp)),
-                10.horizontalSpace,
-                Icon(Icons.person, size: 14.sp),
-                4.horizontalSpace,
-                Expanded(
-                  child: Text(
-                    order.customerFirstName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12.sp),
-                  ),
+                5.w.horizontalSpace,
+                // Icon(Icons.person, size: 14.sp),
+                // 4.horizontalSpace,
+                // Text(
+                //   order.customerFirstName,
+                //   maxLines: 1,
+                //   overflow: TextOverflow.ellipsis,
+                //   style: TextStyle(fontSize: 12.sp),
+                // ),
+                Image.asset(
+                  order.isSelfPickup
+                      ? 'assets/pickup_icon.png'
+                      : 'assets/home_delivery.png',
+                  color: Colors.black,
+                  width: 16.w,
+                  fit: BoxFit.cover,
                 ),
+                3.w.horizontalSpace,
                 Text(
                   formatString(order.type),
                   maxLines: 1,
@@ -453,19 +460,15 @@ class _OrderRow extends StatelessWidget {
                   style: TextStyle(fontSize: 12.sp),
                 ),
                 SizedBox(width: 8.w),
-                Row(
-                  children: [
-                    Icon(status.icon, size: 14.sp, color: status.color),
-                    4.horizontalSpace,
-                    Text(
-                      status.label,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w800,
-                        color: status.color,
-                      ),
-                    ),
-                  ],
+                Icon(status.icon, size: 14.sp, color: status.color),
+                4.horizontalSpace,
+                Text(
+                  status.label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w800,
+                    color: status.color,
+                  ),
                 ),
               ],
             ),

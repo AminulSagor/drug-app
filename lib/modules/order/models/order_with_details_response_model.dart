@@ -1,5 +1,3 @@
-import '../../../core/models/drug_item_model.dart';
-
 class OrderWithDetailsResponseModel {
   final int progress;
   final int cancelled;
@@ -13,19 +11,15 @@ class OrderWithDetailsResponseModel {
     required this.orders,
   });
 
-  static int _i(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
   factory OrderWithDetailsResponseModel.fromJson(Map<String, dynamic> json) {
     return OrderWithDetailsResponseModel(
-      progress: _i(json['progress']),
-      cancelled: _i(json['cancelled']),
-      delivered: _i(json['delivered']),
+      progress: _parseInt(json['progress']),
+      cancelled: _parseInt(json['cancelled']),
+      delivered: _parseInt(json['delivered']),
       orders: OrdersPageModel.fromJson(
-        (json['orders'] as Map<String, dynamic>? ?? const {}),
+        json['orders'] is Map<String, dynamic>
+            ? json['orders'] as Map<String, dynamic>
+            : const {},
       ),
     );
   }
@@ -34,14 +28,11 @@ class OrderWithDetailsResponseModel {
 class OrdersPageModel {
   final int currentPage;
   final List<OrderWithDetailsModel> data;
-
   final String firstPageUrl;
   final int from;
   final int lastPage;
   final String lastPageUrl;
-
   final List<PageLinkModel> links;
-
   final String nextPageUrl;
   final String path;
   final int perPage;
@@ -65,48 +56,34 @@ class OrdersPageModel {
     required this.total,
   });
 
-  static int _i(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static String _s(dynamic v) => (v ?? '').toString();
-
   factory OrdersPageModel.fromJson(Map<String, dynamic> json) {
     final rawData = json['data'];
-    final list = (rawData is List)
-        ? rawData
-              .where((e) => e is Map<String, dynamic>)
-              .map(
-                (e) =>
-                    OrderWithDetailsModel.fromJson(e as Map<String, dynamic>),
-              )
-              .toList()
-        : <OrderWithDetailsModel>[];
-
     final rawLinks = json['links'];
-    final linkList = (rawLinks is List)
-        ? rawLinks
-              .where((e) => e is Map<String, dynamic>)
-              .map((e) => PageLinkModel.fromJson(e as Map<String, dynamic>))
-              .toList()
-        : <PageLinkModel>[];
 
     return OrdersPageModel(
-      currentPage: _i(json['current_page']),
-      data: list,
-      firstPageUrl: _s(json['first_page_url']),
-      from: _i(json['from']),
-      lastPage: _i(json['last_page']),
-      lastPageUrl: _s(json['last_page_url']),
-      links: linkList,
-      nextPageUrl: _s(json['next_page_url']),
-      path: _s(json['path']),
-      perPage: _i(json['per_page']),
-      prevPageUrl: _s(json['prev_page_url']),
-      to: _i(json['to']),
-      total: _i(json['total']),
+      currentPage: _parseInt(json['current_page']),
+      data: rawData is List
+          ? rawData
+                .whereType<Map<String, dynamic>>()
+                .map(OrderWithDetailsModel.fromJson)
+                .toList()
+          : <OrderWithDetailsModel>[],
+      firstPageUrl: _parseString(json['first_page_url']),
+      from: _parseInt(json['from']),
+      lastPage: _parseInt(json['last_page']),
+      lastPageUrl: _parseString(json['last_page_url']),
+      links: rawLinks is List
+          ? rawLinks
+                .whereType<Map<String, dynamic>>()
+                .map(PageLinkModel.fromJson)
+                .toList()
+          : <PageLinkModel>[],
+      nextPageUrl: _parseString(json['next_page_url']),
+      path: _parseString(json['path']),
+      perPage: _parseInt(json['per_page']),
+      prevPageUrl: _parseString(json['prev_page_url']),
+      to: _parseInt(json['to']),
+      total: _parseInt(json['total']),
     );
   }
 }
@@ -122,99 +99,43 @@ class PageLinkModel {
     required this.active,
   });
 
-  static String _s(dynamic v) => (v ?? '').toString();
-
   factory PageLinkModel.fromJson(Map<String, dynamic> json) {
     return PageLinkModel(
-      url: _s(json['url']),
-      label: _s(json['label']),
-      active: (json['active'] == true),
+      url: _parseString(json['url']),
+      label: _parseString(json['label']),
+      active: json['active'] == true,
     );
   }
-}
-
-/// ✅ FIXED: order_prescriptions object model
-class OrderPrescriptionModel {
-  final int id;
-  final int orderId;
-  final String prescriptionCopy; // filename
-  final String prescriptionCopyPath; // full URL ✅
-  final String createdAt;
-  final String updatedAt;
-
-  const OrderPrescriptionModel({
-    required this.id,
-    required this.orderId,
-    required this.prescriptionCopy,
-    required this.prescriptionCopyPath,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  static int _i(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static String _s(dynamic v) => (v ?? '').toString();
-
-  factory OrderPrescriptionModel.fromJson(Map<String, dynamic> json) {
-    // Your correct field: prescription_copy_path ✅
-    final url = _s(
-      json['prescription_copy_image_path'] ??
-      json['prescription_copy_path'] ??
-          json['file_url'] ??
-          json['url'] ??
-          json['image'] ??
-          json['path'],
-    ).trim();
-
-    return OrderPrescriptionModel(
-      id: _i(json['id']),
-      orderId: _i(json['order_id']),
-      prescriptionCopy: _s(json['prescription_copy']).trim(),
-      prescriptionCopyPath: url,
-      createdAt: _s(json['created_at']),
-      updatedAt: _s(json['updated_at']),
-    );
-  }
-
-  bool get hasUrl => prescriptionCopyPath.trim().isNotEmpty;
 }
 
 class OrderWithDetailsModel {
   final int id;
   final int userId;
   final int pharmacyId;
-
   final String orderNo;
   final String type;
-  final String area;
-  final String paymentMethod;
-
-  final num offerTotalAmount;
+  final int requiredPrepaid;
+  final String requiredPrepaidFor;
+  final num subtotal;
+  final num pharmacyBasePrice;
+  final num payableToPharmacy;
+  final num platformMargin;
   final String status;
-
-  final num deliveryCharge;
-  final num offerDeliveryCharge;
-  final num offerGrandTotal;
-
-  final num comissionAmount;
   final int deliveryConfirmationCode;
-
+  final String paymentStatus;
+  final String paymentMethod;
   final String orderDate;
+  final String priority;
   final dynamic coupon;
-
   final String createdAt;
   final String updatedAt;
-
   final OrderUserModel? user;
-
-  /// ✅ FIXED: List of objects (from API)
-  final List<OrderPrescriptionModel> prescriptions;
-
+  final List<OrderPrescriptionModel> orderPrescriptions;
   final List<OrderItemApiModel> orderItems;
+  final num calculatedSubtotal;
+  final num calculatedPlatformCharge;
+  final int isAllowedPicked;
+  final String collectLabel;
 
   const OrderWithDetailsModel({
     required this.id,
@@ -222,140 +143,85 @@ class OrderWithDetailsModel {
     required this.pharmacyId,
     required this.orderNo,
     required this.type,
-    required this.area,
-    required this.paymentMethod,
-    required this.offerTotalAmount,
+    required this.requiredPrepaid,
+    required this.requiredPrepaidFor,
+    required this.subtotal,
+    required this.pharmacyBasePrice,
+    required this.payableToPharmacy,
+    required this.platformMargin,
     required this.status,
-    required this.deliveryCharge,
-    required this.offerDeliveryCharge,
-    required this.offerGrandTotal,
-    required this.comissionAmount,
     required this.deliveryConfirmationCode,
+    required this.paymentStatus,
+    required this.paymentMethod,
     required this.orderDate,
+    required this.priority,
     required this.coupon,
     required this.createdAt,
     required this.updatedAt,
     required this.user,
-    required this.prescriptions,
+    required this.orderPrescriptions,
     required this.orderItems,
+    required this.calculatedSubtotal,
+    required this.calculatedPlatformCharge,
+    required this.isAllowedPicked,
+    required this.collectLabel,
   });
 
-  static int _i(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static num _n(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v;
-    return num.tryParse(v.toString()) ?? 0;
-  }
-
-  static String _s(dynamic v) => (v ?? '').toString();
-
-  static List<OrderPrescriptionModel> _parsePrescriptions(dynamic raw) {
-    if (raw is! List) return <OrderPrescriptionModel>[];
-
-    final list = <OrderPrescriptionModel>[];
-
-    for (final e in raw) {
-      if (e is Map<String, dynamic>) {
-        final p = OrderPrescriptionModel.fromJson(e);
-        if (p.hasUrl) list.add(p);
-      } else if (e is String) {
-        // fallback: if backend ever returns list of strings
-        final url = e.trim();
-        if (url.isNotEmpty) {
-          list.add(
-            OrderPrescriptionModel(
-              id: 0,
-              orderId: 0,
-              prescriptionCopy: '',
-              prescriptionCopyPath: url,
-              createdAt: '',
-              updatedAt: '',
-            ),
-          );
-        }
-      }
-    }
-
-    return list;
-  }
-
   factory OrderWithDetailsModel.fromJson(Map<String, dynamic> json) {
+    final rawUser = json['user'];
+    final rawPrescriptions = json['order_prescriptions'];
     final rawItems = json['order_items'];
-    final items = (rawItems is List)
-        ? rawItems
-              .where((e) => e is Map<String, dynamic>)
-              .map((e) => OrderItemApiModel.fromJson(e as Map<String, dynamic>))
-              .toList()
-        : <OrderItemApiModel>[];
-
-    final rawUser = json['user'] ?? json['users'];
-    final OrderUserModel? u = (rawUser is Map<String, dynamic>)
-        ? OrderUserModel.fromJson(rawUser)
-        : null;
-
-    final pres = _parsePrescriptions(json['order_prescriptions']);
 
     return OrderWithDetailsModel(
-      id: _i(json['id']),
-      userId: _i(json['user_id']),
-      pharmacyId: _i(json['pharmacy_id']),
-      orderNo: _s(json['orderNo'] ?? json['order_no']),
-      type: _s(json['type']),
-      area: _s(json['area']),
-      paymentMethod: _s(json['payment_method']),
-      offerTotalAmount: _n(
-        json['offer_total_amount'] ??
-            json['subtotal'] ??
-            json['calculated_subtotal'],
-      ),
-      status: _s(json['status']),
-      deliveryCharge: _n(
-        json['deliveryCharge'] ??
-            json['delivery_charge'] ??
-            json['platform_charge'] ??
-            json['calculated_platform_charge'],
-      ),
-      offerDeliveryCharge: _n(
-        json['offer_deliveryCharge'] ??
-            json['offer_delivery_charge'] ??
-            json['platform_charge'] ??
-            json['calculated_platform_charge'],
-      ),
-      offerGrandTotal: _n(
-        json['offer_grandTotal'] ??
-            json['offer_grand_total'] ??
-            json['payable_to_pharmacy'] ??
-            json['subtotal'],
-      ),
-      comissionAmount: _n(
-        json['comission_amount'] ??
-            json['commission_amount'] ??
-            json['platform_margin'],
-      ),
-      deliveryConfirmationCode: _i(json['delivery_confirmation_code']),
-      orderDate: _s(json['orderDate']),
+      id: _parseInt(json['id']),
+      userId: _parseInt(json['user_id']),
+      pharmacyId: _parseInt(json['pharmacy_id']),
+      orderNo: _parseString(json['orderNo']),
+      type: _parseString(json['type']),
+      requiredPrepaid: _parseInt(json['required_prepaid']),
+      requiredPrepaidFor: _parseString(json['required_prepaid_for']),
+      subtotal: _parseNum(json['subtotal']),
+      pharmacyBasePrice: _parseNum(json['pharmacy_base_price']),
+      payableToPharmacy: _parseNum(json['payable_to_pharmacy']),
+      platformMargin: _parseNum(json['platform_margin']),
+      status: _parseString(json['status']),
+      deliveryConfirmationCode: _parseInt(json['delivery_confirmation_code']),
+      paymentStatus: _parseString(json['payment_status']),
+      paymentMethod: _parseString(json['payment_method']),
+      orderDate: _parseString(json['orderDate']),
+      priority: _parseString(json['priority']),
       coupon: json['coupon'],
-      createdAt: _s(json['created_at']),
-      updatedAt: _s(json['updated_at']),
-      user: u,
-      prescriptions: pres,
-      orderItems: items,
+      createdAt: _parseString(json['created_at']),
+      updatedAt: _parseString(json['updated_at']),
+      user: rawUser is Map<String, dynamic>
+          ? OrderUserModel.fromJson(rawUser)
+          : null,
+      orderPrescriptions: rawPrescriptions is List
+          ? rawPrescriptions
+                .whereType<Map<String, dynamic>>()
+                .map(OrderPrescriptionModel.fromJson)
+                .where((e) => e.hasUrl)
+                .toList()
+          : <OrderPrescriptionModel>[],
+      orderItems: rawItems is List
+          ? rawItems
+                .whereType<Map<String, dynamic>>()
+                .map(OrderItemApiModel.fromJson)
+                .toList()
+          : <OrderItemApiModel>[],
+      calculatedSubtotal: _parseNum(json['calculated_subtotal']),
+      calculatedPlatformCharge: _parseNum(json['calculated_platform_charge']),
+      isAllowedPicked: _parseInt(json['is_allowed_picked']),
+      collectLabel: _parseString(json['collectLabel']),
     );
   }
 
-  // -------- UI helpers ----------
-  String get customerFirstName => (user?.firstName ?? '').trim();
-  String get customerPhone => (user?.phoneNumber ?? '').trim();
+  String get customerFirstName => user?.firstName.trim() ?? '';
+  String get customerPhone => user?.phoneNumber.trim() ?? '';
   bool get isSelfPickup => type.toLowerCase() == 'self_pickup';
 
-  /// ✅ UI will use these
-  List<String> get prescriptionUrls => prescriptions
-      .map((e) => e.prescriptionCopyPath.trim())
+  List<String> get prescriptionUrls => orderPrescriptions
+      .map((e) => e.prescriptionCopyImagePath.trim())
       .where((e) => e.isNotEmpty)
       .toList();
 
@@ -367,93 +233,187 @@ class OrderUserModel {
   final String firstName;
   final String lastName;
   final String phoneNumber;
+  final String phoneNumberVerifiedAt;
+  final String bloodGroup;
+  final int donateBlood;
+  final int termsConditions;
+  final int status;
+  final String segment;
+  final String refBy;
+  final String createdAt;
+  final String updatedAt;
 
   const OrderUserModel({
     required this.id,
     required this.firstName,
     required this.lastName,
     required this.phoneNumber,
+    required this.phoneNumberVerifiedAt,
+    required this.bloodGroup,
+    required this.donateBlood,
+    required this.termsConditions,
+    required this.status,
+    required this.segment,
+    required this.refBy,
+    required this.createdAt,
+    required this.updatedAt,
   });
-
-  static int _i(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static String _s(dynamic v) => (v ?? '').toString();
 
   factory OrderUserModel.fromJson(Map<String, dynamic> json) {
     return OrderUserModel(
-      id: _i(json['id']),
-      firstName: _s(json['firstName'] ?? json['first_name']),
-      lastName: _s(json['lastName'] ?? json['last_name']),
-      phoneNumber: _s(json['phoneNumber'] ?? json['phone_number']),
+      id: _parseInt(json['id']),
+      firstName: _parseString(json['firstName']),
+      lastName: _parseString(json['lastName']),
+      phoneNumber: _parseString(json['phoneNumber']),
+      phoneNumberVerifiedAt: _parseString(json['phoneNumber_verified_at']),
+      bloodGroup: _parseString(json['bloodGroup']),
+      donateBlood: _parseInt(json['donateBlood']),
+      termsConditions: _parseInt(json['termsConditions']),
+      status: _parseInt(json['status']),
+      segment: _parseString(json['segment']),
+      refBy: _parseString(json['ref_by']),
+      createdAt: _parseString(json['created_at']),
+      updatedAt: _parseString(json['updated_at']),
     );
   }
+}
+
+class OrderPrescriptionModel {
+  final int id;
+  final int orderId;
+  final String prescriptionCopy;
+  final String createdAt;
+  final String updatedAt;
+  final String prescriptionCopyImagePath;
+
+  const OrderPrescriptionModel({
+    required this.id,
+    required this.orderId,
+    required this.prescriptionCopy,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.prescriptionCopyImagePath,
+  });
+
+  factory OrderPrescriptionModel.fromJson(Map<String, dynamic> json) {
+    return OrderPrescriptionModel(
+      id: _parseInt(json['id']),
+      orderId: _parseInt(json['order_id']),
+      prescriptionCopy: _parseString(json['prescription_copy']),
+      createdAt: _parseString(json['created_at']),
+      updatedAt: _parseString(json['updated_at']),
+      prescriptionCopyImagePath: _parseString(
+        json['prescription_copy_image_path'],
+      ),
+    );
+  }
+
+  bool get hasUrl => prescriptionCopyImagePath.trim().isNotEmpty;
 }
 
 class OrderItemApiModel {
   final int id;
-  final int orderId;
   final int productId;
-
-  final num discountUnitPrice;
-  final num offerUnitPrice;
   final int quantity;
-  final num totalPrice;
-
-  final String createdAt;
-  final String updatedAt;
-
-  final DrugItemModel? product;
+  final num unitPrice;
+  final num unitTotal;
+  final OrderProductModel? product;
 
   const OrderItemApiModel({
     required this.id,
-    required this.orderId,
     required this.productId,
-    required this.discountUnitPrice,
-    required this.offerUnitPrice,
     required this.quantity,
-    required this.totalPrice,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.unitPrice,
+    required this.unitTotal,
     required this.product,
   });
 
-  static int _i(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static num _n(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v;
-    return num.tryParse(v.toString()) ?? 0;
-  }
-
-  static String _s(dynamic v) => (v ?? '').toString();
-
   factory OrderItemApiModel.fromJson(Map<String, dynamic> json) {
     final rawProduct = json['product'];
-    final DrugItemModel? p = (rawProduct is Map<String, dynamic>)
-        ? DrugItemModel.fromJson(rawProduct)
-        : null;
 
     return OrderItemApiModel(
-      id: _i(json['id']),
-      orderId: _i(json['order_id']),
-      productId: _i(json['product_id']),
-      discountUnitPrice: _n(
-        json['discount_unit_price'] ?? json['unit_price'],
-      ),
-      offerUnitPrice: _n(json['offer_unit_price'] ?? json['unit_price']),
-      quantity: _i(json['quantity']),
-      totalPrice: _n(json['total_price'] ?? json['unit_total']),
-      createdAt: _s(json['created_at']),
-      updatedAt: _s(json['updated_at']),
-      product: p,
+      id: _parseInt(json['id']),
+      productId: _parseInt(json['product_id']),
+      quantity: _parseInt(json['quantity']),
+      unitPrice: _parseNum(json['unit_price']),
+      unitTotal: _parseNum(json['unit_total']),
+      product: rawProduct is Map<String, dynamic>
+          ? OrderProductModel.fromJson(rawProduct)
+          : null,
     );
   }
 }
+
+class OrderProductModel {
+  final int id;
+  final String productName;
+  final String genericName;
+  final num retailMaxPrice;
+  final int cartQtyInc;
+  final String cartText;
+  final String unitInPack;
+  final String type;
+  final String quantity;
+  final String prescription;
+  final String feature;
+  final String status;
+  final String coverImage;
+  final int companyId;
+  final int categoryId;
+  final String productCoverImagePath;
+
+  const OrderProductModel({
+    required this.id,
+    required this.productName,
+    required this.genericName,
+    required this.retailMaxPrice,
+    required this.cartQtyInc,
+    required this.cartText,
+    required this.unitInPack,
+    required this.type,
+    required this.quantity,
+    required this.prescription,
+    required this.feature,
+    required this.status,
+    required this.coverImage,
+    required this.companyId,
+    required this.categoryId,
+    required this.productCoverImagePath,
+  });
+
+  factory OrderProductModel.fromJson(Map<String, dynamic> json) {
+    return OrderProductModel(
+      id: _parseInt(json['id']),
+      productName: _parseString(json['productName']),
+      genericName: _parseString(json['genericName']),
+      retailMaxPrice: _parseNum(json['retail_max_price']),
+      cartQtyInc: _parseInt(json['cart_qty_inc']),
+      cartText: _parseString(json['cart_text']),
+      unitInPack: _parseString(json['unit_in_pack']),
+      type: _parseString(json['type']),
+      quantity: _parseString(json['quantity']),
+      prescription: _parseString(json['prescription']),
+      feature: _parseString(json['feature']),
+      status: _parseString(json['status']),
+      coverImage: _parseString(json['coverImage']),
+      companyId: _parseInt(json['company_id']),
+      categoryId: _parseInt(json['category_id']),
+      productCoverImagePath: _parseString(json['product_cover_image_path']),
+    );
+  }
+}
+
+int _parseInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString()) ?? 0;
+}
+
+num _parseNum(dynamic value) {
+  if (value == null) return 0;
+  if (value is num) return value;
+  return num.tryParse(value.toString()) ?? 0;
+}
+
+String _parseString(dynamic value) => (value ?? '').toString();

@@ -410,11 +410,7 @@ class _DashboardStats extends StatelessWidget {
             12.verticalSpace,
             Row(
               children: [
-                _StatTile(
-                  'Balance',
-                  c.totalCommission.value,
-                  iconPath: 'assets/dollar.png',
-                ),
+                _StatTile('Balance', c.totalCommission.value),
                 _StatTile(
                   'Item Listed',
                   c.listedItemsCount.value,
@@ -430,11 +426,11 @@ class _DashboardStats extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  final String iconPath;
+  final String? iconPath;
   final String title;
   final num value;
 
-  const _StatTile(this.title, this.value, {required this.iconPath});
+  const _StatTile(this.title, this.value, {this.iconPath});
 
   @override
   Widget build(BuildContext context) {
@@ -442,10 +438,20 @@ class _StatTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.only(top: 6.h),
-            child: Image.asset(iconPath),
-          ),
+          if (iconPath != null)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h),
+              child: Image.asset(iconPath!, width: 20.w),
+            ),
+          if (iconPath == null)
+            Text(
+              '৳ ',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           8.w.horizontalSpace,
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

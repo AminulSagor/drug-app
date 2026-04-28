@@ -195,9 +195,7 @@ class AllListController extends GetxController {
     editSaleCtrl.text = (item.currentStock?.discountPrice ?? 0).toString();
     editPSaleCtrl.text = (item.currentStock?.peakHourPrice ?? 0).toString();
     editOfferCtrl.text = (item.offer).toString();
-
-    // NOTE: you didn't have qty in model; using stockAlert as best guess.
-    editQtyCtrl.text = '${item.currentStock?.stockAlert ?? 0}';
+    editQtyCtrl.text = '${item.currentStock?.inStock ?? 0}';
 
     Get.dialog(const EditDrugDialog(), barrierDismissible: true);
   }
@@ -267,7 +265,8 @@ class AllListController extends GetxController {
     if (isEditLoading.value) return;
 
     final sale =
-        double.tryParse(editSaleCtrl.text) ?? (item.currentStock?.discountPrice ?? 0);
+        double.tryParse(editSaleCtrl.text) ??
+        (item.currentStock?.discountPrice ?? 0);
     final pSale =
         double.tryParse(editPSaleCtrl.text) ??
         (item.currentStock?.peakHourPrice ?? 0);
@@ -337,18 +336,6 @@ class AllListController extends GetxController {
     } finally {
       guard.value = false;
     }
-  }
-
-  num? _parseNum(String v) {
-    final t = v.trim();
-    if (t.isEmpty) return null;
-    return num.tryParse(t);
-  }
-
-  int? _parseInt(String v) {
-    final t = v.trim();
-    if (t.isEmpty) return null;
-    return int.tryParse(t);
   }
 
   @override

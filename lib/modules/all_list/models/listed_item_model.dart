@@ -177,15 +177,16 @@ class ListedItemModel {
       coverImage: (json['coverImage'] ?? '').toString(),
       companyId: _parseInt(json['company_id']),
       categoryId: _parseInt(json['category_id']),
-      productCoverImagePath: (json['product_cover_image_path'] ?? '').toString(),
+      productCoverImagePath: (json['product_cover_image_path'] ?? '')
+          .toString(),
       company: companyJson is Map
           ? ListedItemCompanyModel.fromJson(
-              Map<String, dynamic>.from(companyJson as Map),
+              Map<String, dynamic>.from(companyJson),
             )
           : null,
       currentStock: currentStockJson is Map
           ? ListedCurrentStockModel.fromJson(
-              Map<String, dynamic>.from(currentStockJson as Map),
+              Map<String, dynamic>.from(currentStockJson),
             )
           : null,
     );

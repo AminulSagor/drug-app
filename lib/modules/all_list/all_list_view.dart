@@ -405,7 +405,7 @@ class _RowCard extends StatelessWidget {
 
           /// Rate
           Expanded(
-            flex: 18,
+            flex: 24,
             child: _RateText(
               mrp: item.retailMaxPrice,
               sale: item.sale,
