@@ -62,6 +62,9 @@ class AuthController extends GetxController {
       // ✅ api.login already saved token + user in storage, just keep in memory too
       user.value = res.user;
 
+      phoneCtrl.clear();
+      passCtrl.clear();
+
       Get.offAllNamed(Routes.shell);
     } on ApiException catch (e) {
       Get.snackbar('Login Failed', e.message);

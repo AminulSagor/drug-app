@@ -76,7 +76,10 @@ class LoginView extends GetView<AuthController> {
                         ),
                       ),
                       8.verticalSpace,
-                      _InputBox(controller: controller.phoneCtrl),
+                      _InputBox(
+                        controller: controller.phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                      ),
 
                       18.verticalSpace,
 
@@ -181,11 +184,13 @@ class _InputBox extends StatelessWidget {
   final TextEditingController controller;
   final bool obscureText;
   final Widget? suffix;
+  final TextInputType? keyboardType;
 
   const _InputBox({
     required this.controller,
     this.obscureText = false,
     this.suffix,
+    this.keyboardType,
   });
 
   @override
@@ -200,6 +205,7 @@ class _InputBox extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         textAlignVertical: TextAlignVertical.center,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           border: InputBorder.none,
           isCollapsed: true,
