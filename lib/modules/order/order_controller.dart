@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/network/api_exception.dart';
+import '../../core/widgets/app_snackbar.dart';
 import 'models/order_with_details_response_model.dart';
 import 'services/order_api.dart';
 
@@ -142,9 +143,9 @@ class OrderController extends GetxController {
         scrollController.jumpTo(0);
       }
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       if (showLoader) isLoading.value = false;
       if (showBottomLoader) isLoadingMore.value = false;
@@ -240,10 +241,10 @@ class OrderController extends GetxController {
       pageSize.value = result.isEmpty ? 1 : result.length;
     } on ApiException catch (e) {
       if (reqId != _searchReqId) return;
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
       if (reqId != _searchReqId) return;
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       if (showLoader) isLoading.value = false;
     }
@@ -257,7 +258,7 @@ class OrderController extends GetxController {
     clearingOrderIds.add(orderId);
     try {
       final msg = await _api.clearOrder(orderId: orderId);
-      Get.snackbar('Success', msg);
+      AppSnackbar.success(msg);
 
       // ✅ Refresh list without full loader
       if (isSearching) {
@@ -269,9 +270,9 @@ class OrderController extends GetxController {
       // optional: close details dialog after success
       // if (Get.isDialogOpen == true) Get.back();
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       clearingOrderIds.remove(orderId);
     }

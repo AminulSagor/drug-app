@@ -1,4 +1,5 @@
 import 'package:drug/core/theme/app_palette.dart';
+import '../../../core/utils/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -77,7 +78,7 @@ class EditDrugDialog extends GetView<AllListController> {
                         ),
                       ),
                       Text(
-                        '৳ ${item.retailMaxPrice}',
+                        '৳ ${formatMoney(item.retailMaxPrice)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

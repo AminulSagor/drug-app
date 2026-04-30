@@ -1,4 +1,5 @@
 import 'package:drug/core/theme/app_palette.dart';
+import '../../core/utils/currency_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -485,7 +486,7 @@ class _RateText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'MRP : ৳ $mrp\nSale : ৳ $sale\nP-sale : ৳ $pSale',
+          'MRP : ৳ ${formatMoney(mrp)}\nSale : ৳ ${formatMoney(sale)}\nP-sale : ৳ ${formatMoney(pSale)}',
           softWrap: true,
           maxLines: 3, // ✅ wrap
           overflow: TextOverflow.ellipsis,
@@ -498,7 +499,7 @@ class _RateText extends StatelessWidget {
         ),
         4.verticalSpace,
         Text(
-          'Offer : ৳ $offer',
+          'Offer : ৳ ${formatMoney(offer)}',
           softWrap: true,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

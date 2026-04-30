@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import '../../../core/utils/order_status_formatter.dart';
 import '../models/order_with_details_response_model.dart';
 import '../order_controller.dart';
 import 'prescription_list_dialog.dart';
@@ -42,7 +43,7 @@ class OrderDetailsDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '# ${order.orderNo}   \৳ ${order.subtotal}  (${order.collectLabel})',
+                      '# ${order.orderNo}   \৳ ${order.subtotalText}  (${order.collectLabel})',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -66,55 +67,59 @@ class OrderDetailsDialog extends StatelessWidget {
 
             Container(
               color: _primary,
+              width: double.infinity,
               padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 10.h),
-              child: Row(
-                children: [
-                  Icon(Icons.phone, size: 14.sp, color: Colors.white),
-                  4.horizontalSpace,
-                  Text(
-                    order.customerPhone,
-                    style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                  ),
-                  // 10.horizontalSpace,
-                  // Icon(Icons.person, size: 14.sp, color: Colors.white),
-                  // 4.horizontalSpace,
-                  // Text(
-                  //   order.customerFirstName,
-                  //   maxLines: 1,
-                  //   overflow: TextOverflow.ellipsis,
-                  //   style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                  // ),
-                  10.w.horizontalSpace,
-                  Icon(statusUi.icon, size: 14.sp, color: statusUi.color),
-                  4.horizontalSpace,
-                  Text(
-                    statusUi.label,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w400,
-                      color: statusUi.color,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Icon(Icons.phone, size: 14.sp, color: Colors.white),
+                    4.horizontalSpace,
+                    Text(
+                      order.customerPhone,
+                      style: TextStyle(fontSize: 12.sp, color: Colors.white),
                     ),
-                  ),
-                  10.w.horizontalSpace,
-                  Image.asset(
-                    order.isSelfPickup
-                        ? 'assets/pickup_icon.png'
-                        : 'assets/home_delivery.png',
-                    color: Colors.white,
-                    width: 16.w,
-                    fit: BoxFit.cover,
-                  ),
-                  4.horizontalSpace,
-                  Text(
-                    order.isSelfPickup ? 'Self-Pickup' : 'Home-Delivery',
-                    style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                  ),
-                  10.w.horizontalSpace,
-                  Text(
-                    '৳. -${order.calculatedPlatformCharge}',
-                    style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                  ),
-                ],
+                    // 10.horizontalSpace,
+                    // Icon(Icons.person, size: 14.sp, color: Colors.white),
+                    // 4.horizontalSpace,
+                    // Text(
+                    //   order.customerFirstName,
+                    //   maxLines: 1,
+                    //   overflow: TextOverflow.ellipsis,
+                    //   style: TextStyle(fontSize: 12.sp, color: Colors.white),
+                    // ),
+                    10.w.horizontalSpace,
+                    Icon(statusUi.icon, size: 14.sp, color: statusUi.color),
+                    4.horizontalSpace,
+                    Text(
+                      statusUi.label,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                        color: statusUi.color,
+                      ),
+                    ),
+                    10.w.horizontalSpace,
+                    Image.asset(
+                      order.isSelfPickup
+                          ? 'assets/pickup_icon.png'
+                          : 'assets/home_delivery.png',
+                      color: Colors.white,
+                      width: 16.w,
+                      fit: BoxFit.cover,
+                    ),
+                    4.horizontalSpace,
+                    Text(
+                      order.isSelfPickup ? 'Self-Pickup' : 'Home-Delivery',
+                      style: TextStyle(fontSize: 12.sp, color: Colors.white),
+                    ),
+                    10.w.horizontalSpace,
+                    Text(
+                      '৳. -${order.calculatedPlatformCharge}',
+                      style: TextStyle(fontSize: 12.sp, color: Colors.white),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -210,6 +215,11 @@ class _OrderItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = item.product;
     final img = (p?.productCoverImagePath ?? '').trim();
+    final rawCartText = (p?.cartText ?? '').trim();
+    final cartText = rawCartText.isNotEmpty
+        ? rawCartText
+        : (p?.type ?? '').trim();
+    final unitInPack = (p?.unitInPack ?? '').trim();
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -276,7 +286,7 @@ class _OrderItemCard extends StatelessWidget {
                         vertical: 2.h,
                       ),
                       child: Text(
-                        (p?.type ?? '').toLowerCase(),
+                        cartText,
                         style: TextStyle(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w400,
@@ -295,7 +305,7 @@ class _OrderItemCard extends StatelessWidget {
                         vertical: 2.h,
                       ),
                       child: Text(
-                        (p?.unitInPack ?? '').toLowerCase(),
+                        unitInPack,
                         style: TextStyle(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w400,
@@ -307,7 +317,7 @@ class _OrderItemCard extends StatelessWidget {
                 ),
                 4.verticalSpace,
                 Text(
-                  'Unit Price : \৳ ${item.unitPrice}',
+                  'Unit Price : \৳ ${item.unitPriceText}',
                   style: TextStyle(fontSize: 12.sp),
                 ),
                 Text(
@@ -329,7 +339,7 @@ class _OrderItemCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '\৳ ${item.unitTotal}',
+                '\৳ ${item.unitTotalText}',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w800,
@@ -351,34 +361,34 @@ class _StatusUi {
   const _StatusUi(this.label, this.color, this.icon);
 }
 
-/// Status rules:
-/// Pending = Pending
-/// Cancelled = Cancel
-/// Confirmed = Accept
-/// Delivered = Delivered
-/// Processing, ReadyForPickup, On delivery = Progress
 _StatusUi _statusUiFromApi(String s) {
-  final v = s.trim().toLowerCase();
+  final v = normalizeOrderStatus(s);
+  final label = orderStatusShowingAs(s);
 
   if (v == 'pending') {
-    return const _StatusUi('Pending', Colors.white, Icons.schedule);
+    return _StatusUi(label, Colors.white, Icons.schedule);
   }
   if (v == 'cancelled' || v == 'canceled') {
-    return const _StatusUi('Cancel', Colors.red, Icons.cancel);
+    return _StatusUi(label, Colors.red, Icons.cancel);
   }
   if (v == 'confirmed') {
-    return const _StatusUi('Accept', Colors.green, Icons.check_circle);
+    return _StatusUi(label, Colors.green, Icons.check_circle);
   }
   if (v == 'delivered') {
-    return const _StatusUi(
-      'Delivered',
-      AppPalette.positiveText,
-      Icons.check_circle,
-    );
+    return _StatusUi(label, AppPalette.positiveText, Icons.check_circle);
   }
-  if (v == 'processing' || v == 'readyforpickup' || v == 'on delivery') {
-    return const _StatusUi('Progress', Colors.white, Icons.autorenew);
+  if (v == 'processing') {
+    return _StatusUi(label, Colors.white, Icons.autorenew);
+  }
+  if (v == 'ready_for_pickup' || v == 'readyforpickup') {
+    return _StatusUi(label, Colors.white, Icons.inventory_2_outlined);
+  }
+  if (v == 'on_way' || v == 'onway' || v == 'on_delivery') {
+    return _StatusUi(label, Colors.white, Icons.local_shipping_outlined);
+  }
+  if (v == 'returned') {
+    return _StatusUi(label, Colors.orange, Icons.keyboard_return);
   }
 
-  return const _StatusUi('Progress', Colors.white, Icons.autorenew);
+  return _StatusUi(label, Colors.white, Icons.info_outline);
 }

@@ -38,10 +38,7 @@ class DashboardApi {
     try {
       final res = await _dio.post(
         '/pharmacy/accept_decline_order-for-mobile-app',
-        data: {
-          "order_id": orderId,
-          "action_value": actionValue, // keep exact key casing
-        },
+        data: {"order_id": orderId, "action_value": actionValue},
       );
 
       final data = res.data;
@@ -73,22 +70,7 @@ class DashboardApi {
   }
 
   ApiException _mapDioToApiException(DioException e) {
-    final status = e.response?.statusCode;
-
-    String msg = 'Request failed. Please try again.';
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      msg = _extractApiMessage(data) ?? msg;
-    }
-
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout) {
-      msg = 'Connection timed out. Please try again.';
-    }
-
-    return ApiException(msg, statusCode: status);
+    return ApiException.fromDio(e);
   }
 
   String? _extractApiMessage(Map<String, dynamic> data) {

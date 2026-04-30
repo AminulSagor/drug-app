@@ -77,10 +77,8 @@ class OrderApi {
       final data = res.data;
 
       // ✅ Try to get message if backend returns one
-      if (data is Map<String, dynamic>) {
-        final m = data['message'];
-        if (m is String && m.trim().isNotEmpty) return m.trim();
-      }
+      final message = ApiException.extractBackendMessage(data);
+      if (message != null && message.trim().isNotEmpty) return message.trim();
 
       return 'Order cleared successfully.';
     } on DioException catch (e) {
@@ -93,22 +91,6 @@ class OrderApi {
   }
 
   ApiException _mapDioToApiException(DioException e) {
-    final status = e.response?.statusCode;
-
-    String msg = 'Request failed. Please try again.';
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      final m = data['message'];
-      if (m is String && m.trim().isNotEmpty) msg = m;
-    }
-
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout) {
-      msg = 'Connection timed out. Please try again.';
-    }
-
-    return ApiException(msg, statusCode: status);
+    return ApiException.fromDio(e);
   }
 }

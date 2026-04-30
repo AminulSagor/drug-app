@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/network/api_exception.dart';
+import '../../../core/widgets/app_snackbar.dart';
+import '../../../routes/app_routes.dart';
 import '../services/auth_api.dart';
 
 class ResetPasswordController extends GetxController {
@@ -42,7 +44,7 @@ class ResetPasswordController extends GetxController {
   Future<void> sendOtp() async {
     final phone = _phone();
     if (!_isValidPhone(phone)) {
-      Get.snackbar('Invalid', 'Enter a valid phone number');
+      AppSnackbar.info('Enter a valid phone number', title: 'Invalid');
       return;
     }
 
@@ -50,18 +52,17 @@ class ResetPasswordController extends GetxController {
     try {
       final msg = await _api.sendOtp(number: phone);
 
-      // ✅ always show server message
-      Get.snackbar('OTP', msg);
-
-      // ✅ set state only if message not error-like
-      if (!_looksLikeErrorMessage(msg)) {
+      if (_looksLikeErrorMessage(msg)) {
+        AppSnackbar.failed(msg, title: 'OTP Failed');
+      } else {
+        AppSnackbar.info(msg, title: 'OTP');
         otpSent.value = true;
         otpVerified.value = false;
       }
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       isSendingOtp.value = false;
     }
@@ -73,11 +74,11 @@ class ResetPasswordController extends GetxController {
     final otp = int.tryParse(otpStr);
 
     if (!_isValidPhone(phone)) {
-      Get.snackbar('Invalid', 'Enter a valid phone number');
+      AppSnackbar.info('Enter a valid phone number', title: 'Invalid');
       return;
     }
     if (otp == null || otpStr.length < 4) {
-      Get.snackbar('Invalid', 'Enter a valid OTP');
+      AppSnackbar.info('Enter a valid OTP', title: 'Invalid');
       return;
     }
 
@@ -85,18 +86,17 @@ class ResetPasswordController extends GetxController {
     try {
       final msg = await _api.verifyOtp(number: phone, otp: otp);
 
-      // ✅ always show server message
-      Get.snackbar('OTP', msg);
-
-      if (!_looksLikeErrorMessage(msg)) {
-        otpVerified.value = true;
-      } else {
+      if (_looksLikeErrorMessage(msg)) {
+        AppSnackbar.failed(msg, title: 'OTP Failed');
         otpVerified.value = false;
+      } else {
+        AppSnackbar.success(msg, title: 'OTP Verified');
+        otpVerified.value = true;
       }
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       isVerifying.value = false;
     }
@@ -109,23 +109,23 @@ class ResetPasswordController extends GetxController {
     final pass = _pass().trim();
 
     if (!otpSent.value) {
-      Get.snackbar('Step', 'Please send OTP first');
+      AppSnackbar.info('Please send OTP first', title: 'Step');
       return;
     }
     if (!otpVerified.value) {
-      Get.snackbar('Step', 'Please verify OTP first');
+      AppSnackbar.info('Please verify OTP first', title: 'Step');
       return;
     }
     if (!_isValidPhone(phone)) {
-      Get.snackbar('Invalid', 'Enter a valid phone number');
+      AppSnackbar.info('Enter a valid phone number', title: 'Invalid');
       return;
     }
     if (otp == null) {
-      Get.snackbar('Invalid', 'Enter a valid OTP');
+      AppSnackbar.info('Enter a valid OTP', title: 'Invalid');
       return;
     }
     if (pass.length < 6) {
-      Get.snackbar('Invalid', 'Password must be at least 6 characters');
+      AppSnackbar.info('Password must be at least 6 characters', title: 'Invalid');
       return;
     }
 
@@ -137,21 +137,25 @@ class ResetPasswordController extends GetxController {
         password: pass,
       );
 
-      // ✅ always show server message
-      Get.snackbar('Reset', msg);
+      if (_looksLikeErrorMessage(msg)) {
+        AppSnackbar.failed(msg, title: 'Reset Failed');
+        return;
+      }
 
-      // ✅ go back only if message not error-like
-      // if (!_looksLikeErrorMessage(msg)) {
-      //   Get.back(); // back to login
-      // }
-      Get.back(); // back to login
+      AppSnackbar.success(msg, title: 'Password Changed');
+      await Future.delayed(const Duration(milliseconds: 650));
+      Get.offAllNamed(Routes.login);
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       isChanging.value = false;
     }
+  }
+
+  void goToLogin() {
+    Get.offAllNamed(Routes.login);
   }
 
   @override

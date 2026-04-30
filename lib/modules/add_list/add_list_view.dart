@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../core/widgets/suggestion_box.dart';
+import '../../core/utils/currency_formatter.dart';
 import 'add_list_controller.dart';
 
 class AddListView extends GetView<AddListController> {
@@ -111,7 +112,7 @@ class AddListView extends GetView<AddListController> {
                                 ],
                               ),
                               Text(
-                                '৳ ${product.retailMaxPrice}',
+                                '৳ ${formatMoney(product.retailMaxPrice)}',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16.sp,

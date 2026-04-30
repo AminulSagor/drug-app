@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../core/network/api_exception.dart';
+import '../../core/widgets/app_snackbar.dart';
 import 'models/dashboard_response_model.dart';
 import 'services/dashboard_api.dart';
 
@@ -21,7 +22,7 @@ class DashboardController extends GetxController {
   final listedItemsCount = 0.obs;
   final progressiveCount = 0.obs;
   final pendingCount = 0.obs;
-  final totalCommission = 0.0.obs;
+  final balance = 0.0.obs;
 
   @override
   void onInit() {
@@ -59,7 +60,7 @@ class DashboardController extends GetxController {
       listedItemsCount.value = res.totalItem;
       progressiveCount.value = res.progressiveOrders;
       pendingCount.value = res.pendingOrders.length;
-      totalCommission.value = res.account.toDouble();
+      balance.value = res.account.toDouble();
 
       _pendingOrders
         ..clear()
@@ -74,9 +75,9 @@ class DashboardController extends GetxController {
         orders.assignAll([_pendingOrders[idx]]);
       }
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       if (showLoader) isOrderLoading.value = false;
     }
@@ -125,14 +126,14 @@ class DashboardController extends GetxController {
         actionValue: actionValue,
       );
 
-      Get.snackbar('Success', msg);
+      AppSnackbar.success(msg);
 
       // ✅ refresh dashboard so stats + pending orders update from server
       await _fetchDashboard(showLoader: false);
     } on ApiException catch (e) {
-      Get.snackbar('Error', e.message);
+      AppSnackbar.failed(e.message, title: 'Error');
     } catch (_) {
-      Get.snackbar('Error', 'Something went wrong. Please try again.');
+      AppSnackbar.failed('Something went wrong. Please try again.', title: 'Error');
     } finally {
       isOrderLoading.value = false;
     }

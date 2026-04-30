@@ -1,3 +1,4 @@
+import 'package:drug/core/utils/currency_formatter.dart';
 import 'package:drug/core/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,7 +33,7 @@ class DashboardView extends GetView<DashboardController> {
                     ),
                     2.verticalSpace,
                     Text(
-                      '19/12/2025',
+                      _todayDateText(),
                       style: TextStyle(fontSize: 11.sp, color: Colors.grey),
                     ),
                   ],
@@ -225,6 +226,7 @@ class _OrderCard extends StatelessWidget {
             ),
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   '# ${order.orderNo}',
@@ -234,104 +236,41 @@ class _OrderCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const Spacer(),
+                4.w.horizontalSpace,
                 Text(
-                  '\৳ ${order.offerTotalAmount}',
-                  style: TextStyle(
+                  '৳. ${order.subtotalText}',
+                  style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                ),
+                4.w.horizontalSpace,
+                SizedBox(
+                  width: 16.w,
+                  child: Image.asset(
+                    order.isSelfPickup
+                        ? 'assets/pickup_icon.png'
+                        : 'assets/home_delivery.png',
                     color: Colors.white,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w700,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                8.horizontalSpace,
+                4.w.horizontalSpace,
+                Flexible(
+                  child: Text(
+                    order.deliveryTypeLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                  ),
+                ),
+                4.w.horizontalSpace,
+                Text(
+                  '৳. -${order.platformCharge}',
+                  style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                ),
               ],
             ),
           ),
 
-          ...order.orderItems.map((item) {
-            final p = item.product;
-            final imageUrl = (p?.coverImagePath ?? '').trim();
-
-            return Container(
-              margin: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFCDC7C7)),
-              ),
-              child: ListTile(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(5.r),
-                  child: SizedBox(
-                    width: 60.w,
-                    height: 60.w,
-                    child: imageUrl.isEmpty
-                        ? Container(
-                            color: AppPalette.imageFill,
-                            alignment: Alignment.center,
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 20.sp,
-                              color: Colors.grey[600],
-                            ),
-                          )
-                        : Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) {
-                              return Container(
-                                color: AppPalette.imageFill,
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.broken_image_outlined,
-                                  size: 20.sp,
-                                  color: Colors.grey[600],
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ),
-                title: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(p?.productName ?? ''),
-                    5.w.horizontalSpace,
-                    Text(p?.strength ?? '', style: TextStyle(fontSize: 10.sp)),
-                  ],
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      (p?.type ?? ''),
-                      style: const TextStyle(
-                        color: AppPalette.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'Rate : \৳ ${item.discountUnitPrice}',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    Text(
-                      'QTY : ${item.quantity}',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-                trailing: Text(
-                  'TOTAL\n\৳ ${item.totalPrice}',
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(color: AppPalette.primary),
-                ),
-              ),
-            );
-          }),
+          ...order.orderItems.map((item) => _PendingOrderItemCard(item: item)),
 
           Padding(
             padding: EdgeInsets.all(12.w),
@@ -378,6 +317,164 @@ class _OrderCard extends StatelessWidget {
   }
 }
 
+class _PendingOrderItemCard extends StatelessWidget {
+  final PendingOrderItemModel item;
+  const _PendingOrderItemCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = item.product;
+    final imageUrl = (p?.coverImagePath ?? '').trim();
+    final rawCartText = (p?.cartText ?? '').trim();
+    final cartText = rawCartText.isNotEmpty
+        ? rawCartText
+        : (p?.type ?? '').trim();
+    final unitInPack = (p?.unitInPack ?? '').trim();
+
+    return Container(
+      margin: EdgeInsets.all(8.w),
+      padding: EdgeInsets.all(10.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF1F6),
+        border: Border.all(color: const Color(0xFFCDC7C7)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(5.r),
+            child: SizedBox(
+              width: 70.w,
+              height: 70.w,
+              child: imageUrl.isEmpty
+                  ? Container(
+                      color: AppPalette.imageFill,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 20.sp,
+                        color: Colors.grey[600],
+                      ),
+                    )
+                  : Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) {
+                        return Container(
+                          color: AppPalette.imageFill,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            size: 20.sp,
+                            color: Colors.grey[600],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+          10.horizontalSpace,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        p?.productName ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    5.horizontalSpace,
+                    Text(
+                      p?.strength ?? '',
+                      style: TextStyle(fontSize: 11.sp, color: Colors.black),
+                    ),
+                  ],
+                ),
+                5.verticalSpace,
+                Wrap(
+                  spacing: 5.w,
+                  runSpacing: 4.h,
+                  children: [
+                    if (cartText.isNotEmpty) _ProductChip(text: cartText),
+                    if (unitInPack.isNotEmpty) _ProductChip(text: unitInPack),
+                  ],
+                ),
+                7.verticalSpace,
+                Text(
+                  'Unit Price : ৳. ${item.unitPriceText}',
+                  style: TextStyle(fontSize: 12.sp, color: Colors.black),
+                ),
+                5.verticalSpace,
+                Text(
+                  'QTY : ${item.quantity}',
+                  style: TextStyle(fontSize: 12.sp, color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+          8.horizontalSpace,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'TOTAL',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppPalette.primary,
+                ),
+              ),
+              2.verticalSpace,
+              Text(
+                '৳. ${item.unitTotalText}',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppPalette.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductChip extends StatelessWidget {
+  final String text;
+  const _ProductChip({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999.w),
+        border: Border.all(color: Colors.grey, width: .6),
+        color: Colors.white.withOpacity(.35),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w400,
+          color: Colors.black,
+        ),
+      ),
+    );
+  }
+}
+
 class _DashboardStats extends StatelessWidget {
   final DashboardController c;
   const _DashboardStats(this.c);
@@ -410,7 +507,7 @@ class _DashboardStats extends StatelessWidget {
             12.verticalSpace,
             Row(
               children: [
-                _StatTile('Balance', c.totalCommission.value),
+                _StatTile('Balance', c.balance.value, isMoney: true),
                 _StatTile(
                   'Item Listed',
                   c.listedItemsCount.value,
@@ -429,8 +526,14 @@ class _StatTile extends StatelessWidget {
   final String? iconPath;
   final String title;
   final num value;
+  final bool isMoney;
 
-  const _StatTile(this.title, this.value, {this.iconPath});
+  const _StatTile(
+    this.title,
+    this.value, {
+    this.iconPath,
+    this.isMoney = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +548,7 @@ class _StatTile extends StatelessWidget {
             ),
           if (iconPath == null)
             Text(
-              '৳ ',
+              '৳.',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -456,12 +559,19 @@ class _StatTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                value.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  isMoney
+                      ? value > 0
+                            ? '+${formatMoney(value)}'
+                            : value.toStringAsFixed(2)
+                      : value.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Text(
@@ -478,4 +588,11 @@ class _StatTile extends StatelessWidget {
       ),
     );
   }
+}
+
+String _todayDateText() {
+  final now = DateTime.now();
+  final day = now.day.toString().padLeft(2, '0');
+  final month = now.month.toString().padLeft(2, '0');
+  return '$day/$month/${now.year}';
 }

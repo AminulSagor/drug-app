@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'models/order_with_details_response_model.dart';
 import 'order_controller.dart';
 import 'widgets/order_details_dialog.dart';
+import '../../core/utils/order_status_formatter.dart';
 
 class OrderView extends GetView<OrderController> {
   const OrderView({super.key});
@@ -376,7 +377,7 @@ class _OrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = _statusUiFromApi(order.status);
-    final platformCharge = order.calculatedPlatformCharge.abs();
+    final platformCharge = order.calculatedPlatformCharge;
 
     return InkWell(
       onTap: () => Get.dialog(OrderDetailsDialog(order: order)),
@@ -401,20 +402,20 @@ class _OrderRow extends StatelessWidget {
                     color: Colors.green,
                   ),
                 ),
-                10.horizontalSpace,
+                4.w.horizontalSpace,
                 Text(
-                  '\৳ ${order.subtotal}',
+                  '\৳ ${order.subtotalText}',
                   style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w400,
                     color: Colors.green,
                   ),
                 ),
-                10.horizontalSpace,
+                4.w.horizontalSpace,
                 Text(
                   '\৳ -$platformCharge',
                   style: TextStyle(
-                    fontSize: 16.sp,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w400,
                     color: Colors.green,
                   ),
@@ -486,32 +487,36 @@ class _StatusUi {
   const _StatusUi(this.label, this.color, this.icon);
 }
 
-/// Status rules:
-/// Pending = Pending
-/// Cancelled = Cancel
-/// Confirmed = Accept
-/// Delivered = Delivered
-/// Processing, ReadyForPickup, On delivery = Progress
 _StatusUi _statusUiFromApi(String s) {
-  final v = s.trim().toLowerCase();
+  final v = normalizeOrderStatus(s);
+  final label = orderStatusShowingAs(s);
 
   if (v == 'pending') {
-    return const _StatusUi('Pending', Colors.grey, Icons.schedule);
+    return _StatusUi(label, Colors.grey, Icons.schedule);
   }
   if (v == 'cancelled' || v == 'canceled') {
-    return const _StatusUi('Cancel', Colors.red, Icons.cancel);
+    return _StatusUi(label, Colors.red, Icons.cancel);
   }
   if (v == 'confirmed') {
-    return const _StatusUi('Accept', Colors.green, Icons.check_circle);
+    return _StatusUi(label, Colors.green, Icons.check_circle);
   }
   if (v == 'delivered') {
-    return const _StatusUi('Delivered', Colors.blue, Icons.check_circle);
+    return _StatusUi(label, Colors.blue, Icons.check_circle);
   }
-  if (v == 'processing' || v == 'readyforpickup' || v == 'on delivery') {
-    return const _StatusUi('Progress', Colors.black, Icons.autorenew);
+  if (v == 'processing') {
+    return _StatusUi(label, Colors.black, Icons.autorenew);
+  }
+  if (v == 'ready_for_pickup' || v == 'readyforpickup') {
+    return _StatusUi(label, Colors.black, Icons.inventory_2_outlined);
+  }
+  if (v == 'on_way' || v == 'onway' || v == 'on_delivery') {
+    return _StatusUi(label, Colors.black, Icons.local_shipping_outlined);
+  }
+  if (v == 'returned') {
+    return _StatusUi(label, Colors.orange, Icons.keyboard_return);
   }
 
-  return const _StatusUi('Progress', Colors.black, Icons.autorenew);
+  return _StatusUi(label, Colors.black, Icons.info_outline);
 }
 
 String _formatCreatedAt(String raw) {

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../modules/add_list/add_list_controller.dart';
+import '../utils/currency_formatter.dart';
 
 class SuggestionBox extends GetView<AddListController> {
   const SuggestionBox({super.key});
@@ -103,7 +104,7 @@ class SuggestionBox extends GetView<AddListController> {
                               ),
                             ),
                             Text(
-                              '৳${product.retailMaxPrice}',
+                              '৳${formatMoney(product.retailMaxPrice)}',
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,

@@ -1,3 +1,5 @@
+import '../../../core/utils/currency_formatter.dart';
+
 class OrderWithDetailsResponseModel {
   final int progress;
   final int cancelled;
@@ -131,9 +133,10 @@ class OrderWithDetailsModel {
   final String updatedAt;
   final OrderUserModel? user;
   final List<OrderPrescriptionModel> orderPrescriptions;
+  final List<OrderPaymentModel> orderPayments;
   final List<OrderItemApiModel> orderItems;
   final num calculatedSubtotal;
-  final num calculatedPlatformCharge;
+  final String calculatedPlatformCharge;
   final int isAllowedPicked;
   final String collectLabel;
 
@@ -160,6 +163,7 @@ class OrderWithDetailsModel {
     required this.updatedAt,
     required this.user,
     required this.orderPrescriptions,
+    required this.orderPayments,
     required this.orderItems,
     required this.calculatedSubtotal,
     required this.calculatedPlatformCharge,
@@ -170,13 +174,14 @@ class OrderWithDetailsModel {
   factory OrderWithDetailsModel.fromJson(Map<String, dynamic> json) {
     final rawUser = json['user'];
     final rawPrescriptions = json['order_prescriptions'];
+    final rawPayments = json['order_payments'];
     final rawItems = json['order_items'];
 
     return OrderWithDetailsModel(
       id: _parseInt(json['id']),
       userId: _parseInt(json['user_id']),
       pharmacyId: _parseInt(json['pharmacy_id']),
-      orderNo: _parseString(json['orderNo']),
+      orderNo: _parseString(json['orderNo'] ?? json['order_no']),
       type: _parseString(json['type']),
       requiredPrepaid: _parseInt(json['required_prepaid']),
       requiredPrepaidFor: _parseString(json['required_prepaid_for']),
@@ -188,7 +193,7 @@ class OrderWithDetailsModel {
       deliveryConfirmationCode: _parseInt(json['delivery_confirmation_code']),
       paymentStatus: _parseString(json['payment_status']),
       paymentMethod: _parseString(json['payment_method']),
-      orderDate: _parseString(json['orderDate']),
+      orderDate: _parseString(json['orderDate'] ?? json['order_date']),
       priority: _parseString(json['priority']),
       coupon: json['coupon'],
       createdAt: _parseString(json['created_at']),
@@ -200,9 +205,14 @@ class OrderWithDetailsModel {
           ? rawPrescriptions
                 .whereType<Map<String, dynamic>>()
                 .map(OrderPrescriptionModel.fromJson)
-                .where((e) => e.hasUrl)
                 .toList()
           : <OrderPrescriptionModel>[],
+      orderPayments: rawPayments is List
+          ? rawPayments
+                .whereType<Map<String, dynamic>>()
+                .map(OrderPaymentModel.fromJson)
+                .toList()
+          : <OrderPaymentModel>[],
       orderItems: rawItems is List
           ? rawItems
                 .whereType<Map<String, dynamic>>()
@@ -210,15 +220,23 @@ class OrderWithDetailsModel {
                 .toList()
           : <OrderItemApiModel>[],
       calculatedSubtotal: _parseNum(json['calculated_subtotal']),
-      calculatedPlatformCharge: _parseNum(json['calculated_platform_charge']),
+      calculatedPlatformCharge: _parseString(
+        json['calculated_platform_charge'],
+      ),
       isAllowedPicked: _parseInt(json['is_allowed_picked']),
-      collectLabel: _parseString(json['collectLabel']),
+      collectLabel: _parseString(json['collectLabel'] ?? json['collect_label']),
     );
   }
 
   String get customerFirstName => user?.firstName.trim() ?? '';
   String get customerPhone => user?.phoneNumber.trim() ?? '';
   bool get isSelfPickup => type.toLowerCase() == 'self_pickup';
+
+  String get subtotalText => formatMoney(subtotal);
+  String get pharmacyBasePriceText => formatMoney(pharmacyBasePrice);
+  String get payableToPharmacyText => formatMoney(payableToPharmacy);
+  String get platformMarginText => formatMoney(platformMargin);
+  String get calculatedSubtotalText => formatMoney(calculatedSubtotal);
 
   List<String> get prescriptionUrls => orderPrescriptions
       .map((e) => e.prescriptionCopyImagePath.trim())
@@ -311,6 +329,64 @@ class OrderPrescriptionModel {
   bool get hasUrl => prescriptionCopyImagePath.trim().isNotEmpty;
 }
 
+class OrderPaymentModel {
+  final int id;
+  final int orderId;
+  final int userId;
+  final String paymentMethod;
+  final String paymentChannel;
+  final String transactionId;
+  final String paymentType;
+  final num amount;
+  final String status;
+  final String paidAt;
+  final String verifiedByType;
+  final String verifiedById;
+  final String verifiedAt;
+  final String createdAt;
+  final String updatedAt;
+
+  const OrderPaymentModel({
+    required this.id,
+    required this.orderId,
+    required this.userId,
+    required this.paymentMethod,
+    required this.paymentChannel,
+    required this.transactionId,
+    required this.paymentType,
+    required this.amount,
+    required this.status,
+    required this.paidAt,
+    required this.verifiedByType,
+    required this.verifiedById,
+    required this.verifiedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory OrderPaymentModel.fromJson(Map<String, dynamic> json) {
+    return OrderPaymentModel(
+      id: _parseInt(json['id']),
+      orderId: _parseInt(json['order_id']),
+      userId: _parseInt(json['user_id']),
+      paymentMethod: _parseString(json['payment_method']),
+      paymentChannel: _parseString(json['payment_channel']),
+      transactionId: _parseString(json['transaction_id']),
+      paymentType: _parseString(json['payment_type']),
+      amount: _parseNum(json['amount']),
+      status: _parseString(json['status']),
+      paidAt: _parseString(json['paid_at']),
+      verifiedByType: _parseString(json['verified_by_type']),
+      verifiedById: _parseString(json['verified_by_id']),
+      verifiedAt: _parseString(json['verified_at']),
+      createdAt: _parseString(json['created_at']),
+      updatedAt: _parseString(json['updated_at']),
+    );
+  }
+
+  String get amountText => formatMoney(amount);
+}
+
 class OrderItemApiModel {
   final int id;
   final int productId;
@@ -342,6 +418,9 @@ class OrderItemApiModel {
           : null,
     );
   }
+
+  String get unitPriceText => formatMoney(unitPrice);
+  String get unitTotalText => formatMoney(unitTotal);
 }
 
 class OrderProductModel {
@@ -401,6 +480,8 @@ class OrderProductModel {
       productCoverImagePath: _parseString(json['product_cover_image_path']),
     );
   }
+
+  String get retailMaxPriceText => formatMoney(retailMaxPrice);
 }
 
 int _parseInt(dynamic value) {

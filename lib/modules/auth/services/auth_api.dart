@@ -66,14 +66,7 @@ class AuthApi {
   // ============================================================
 
   String _extractMessage(dynamic data) {
-    try {
-      if (data is Map<String, dynamic>) {
-        final m = data['message'];
-        if (m is String && m.trim().isNotEmpty) return m.trim();
-      }
-      if (data is String && data.trim().isNotEmpty) return data.trim();
-    } catch (_) {}
-    return '';
+    return ApiException.extractBackendMessage(data) ?? '';
   }
 
   /// Sent OTP API : /pharmacy/send_otp
@@ -140,22 +133,6 @@ class AuthApi {
   // ============================================================
 
   ApiException _mapDioToApiException(DioException e) {
-    final status = e.response?.statusCode;
-
-    String msg = 'Request failed. Please try again.';
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      final m = data['message'];
-      if (m is String && m.trim().isNotEmpty) msg = m;
-    }
-
-    if (e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout) {
-      msg = 'Connection timed out. Please try again.';
-    }
-
-    return ApiException(msg, statusCode: status);
+    return ApiException.fromDio(e);
   }
 }

@@ -1,4 +1,5 @@
 import '../../../core/models/drug_item_model.dart';
+import '../../../core/utils/currency_formatter.dart';
 
 class DashboardResponseModel {
   final int totalItem;
@@ -13,33 +14,19 @@ class DashboardResponseModel {
     required this.pendingOrders,
   });
 
-  static int _parseInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static num _parseNum(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v;
-    return num.tryParse(v.toString()) ?? 0;
-  }
-
   factory DashboardResponseModel.fromJson(Map<String, dynamic> json) {
-    final raw = json['pending_orders'];
-
-    final List<PendingOrderModel> pending = (raw is List)
-        ? raw
-              .where((e) => e is Map<String, dynamic>)
-              .map((e) => PendingOrderModel.fromJson(e as Map<String, dynamic>))
-              .toList()
-        : <PendingOrderModel>[];
+    final rawPendingOrders = json['pending_orders'];
 
     return DashboardResponseModel(
       totalItem: _parseInt(json['total_item']),
       account: _parseNum(json['account']),
       progressiveOrders: _parseInt(json['progressive_orders']),
-      pendingOrders: pending,
+      pendingOrders: rawPendingOrders is List
+          ? rawPendingOrders
+                .whereType<Map<String, dynamic>>()
+                .map(PendingOrderModel.fromJson)
+                .toList()
+          : <PendingOrderModel>[],
     );
   }
 }
@@ -49,28 +36,13 @@ class PendingOrderModel {
   final int userId;
   final int pharmacyId;
   final String orderNo;
-
   final String type;
-  final String area;
-  final String paymentMethod;
-
-  final num offerTotalAmount;
   final String status;
-
-  final num deliveryCharge;
-  final num offerDeliveryCharge;
-  final num offerGrandTotal;
-
-  final num comissionAmount;
-
-  final int deliveryConfirmationCode;
-
+  final String paymentMethod;
   final String orderDate;
-  final dynamic coupon;
-
-  final String createdAt;
-  final String updatedAt;
-
+  final String priority;
+  final num subtotal;
+  final String platformCharge;
   final List<PendingOrderItemModel> orderItems;
 
   const PendingOrderModel({
@@ -79,19 +51,12 @@ class PendingOrderModel {
     required this.pharmacyId,
     required this.orderNo,
     required this.type,
-    required this.area,
-    required this.paymentMethod,
-    required this.offerTotalAmount,
     required this.status,
-    required this.deliveryCharge,
-    required this.offerDeliveryCharge,
-    required this.offerGrandTotal,
-    required this.comissionAmount,
-    required this.deliveryConfirmationCode,
+    required this.paymentMethod,
     required this.orderDate,
-    required this.coupon,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.priority,
+    required this.subtotal,
+    required this.platformCharge,
     required this.orderItems,
   });
 
@@ -102,156 +67,100 @@ class PendingOrderModel {
       pharmacyId: pharmacyId,
       orderNo: orderNo,
       type: type,
-      area: area,
-      paymentMethod: paymentMethod,
-      offerTotalAmount: offerTotalAmount,
       status: status ?? this.status,
-      deliveryCharge: deliveryCharge,
-      offerDeliveryCharge: offerDeliveryCharge,
-      offerGrandTotal: offerGrandTotal,
-      comissionAmount: comissionAmount,
-      deliveryConfirmationCode: deliveryConfirmationCode,
+      paymentMethod: paymentMethod,
       orderDate: orderDate,
-      coupon: coupon,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+      priority: priority,
+      subtotal: subtotal,
+      platformCharge: platformCharge,
       orderItems: orderItems,
     );
-  }
-
-  static int _parseInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static num _parseNum(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v;
-    return num.tryParse(v.toString()) ?? 0;
   }
 
   factory PendingOrderModel.fromJson(Map<String, dynamic> json) {
     final rawItems = json['order_items'];
 
-    final List<PendingOrderItemModel> items = (rawItems is List)
-        ? rawItems
-              .where((e) => e is Map<String, dynamic>)
-              .map(
-                (e) =>
-                    PendingOrderItemModel.fromJson(e as Map<String, dynamic>),
-              )
-              .toList()
-        : <PendingOrderItemModel>[];
-
     return PendingOrderModel(
       id: _parseInt(json['id']),
       userId: _parseInt(json['user_id']),
       pharmacyId: _parseInt(json['pharmacy_id']),
-      orderNo: (json['orderNo'] ?? json['order_no'] ?? '').toString(),
-      type: (json['type'] ?? '').toString(),
-      area: (json['area'] ?? '').toString(),
-      paymentMethod: (json['payment_method'] ?? '').toString(),
-      offerTotalAmount: _parseNum(
-        json['offer_total_amount'] ??
-            json['subtotal'] ??
-            json['calculated_subtotal'],
-      ),
-      status: (json['status'] ?? '').toString(),
-      deliveryCharge: _parseNum(
-        json['deliveryCharge'] ??
-            json['delivery_charge'] ??
-            json['platform_charge'],
-      ),
-      offerDeliveryCharge: _parseNum(
-        json['offer_deliveryCharge'] ??
-            json['offer_delivery_charge'] ??
-            json['platform_charge'] ??
-            json['calculated_platform_charge'],
-      ),
-      offerGrandTotal: _parseNum(
-        json['offer_grandTotal'] ??
-            json['offer_grand_total'] ??
-            json['payable_to_pharmacy'] ??
-            json['subtotal'],
-      ),
-      comissionAmount: _parseNum(
-        json['comission_amount'] ??
-            json['commission_amount'] ??
-            json['platform_margin'],
-      ),
-      deliveryConfirmationCode: _parseInt(json['delivery_confirmation_code']),
-      orderDate: (json['orderDate'] ?? '').toString(),
-      coupon: json['coupon'],
-      createdAt: (json['created_at'] ?? '').toString(),
-      updatedAt: (json['updated_at'] ?? '').toString(),
-      orderItems: items,
+      orderNo: _parseString(json['orderNo'] ?? json['order_no']),
+      type: _parseString(json['type']),
+      status: _parseString(json['status']),
+      paymentMethod: _parseString(json['payment_method']),
+      orderDate: _parseString(json['orderDate'] ?? json['order_date']),
+      priority: _parseString(json['priority']),
+      subtotal: _parseNum(json['subtotal']),
+      platformCharge: _parseString(json['platform_charge']),
+      orderItems: rawItems is List
+          ? rawItems
+                .whereType<Map<String, dynamic>>()
+                .map(PendingOrderItemModel.fromJson)
+                .toList()
+          : <PendingOrderItemModel>[],
     );
   }
+
+  bool get isSelfPickup => type.trim().toLowerCase() == 'self_pickup';
+
+  String get deliveryTypeLabel =>
+      isSelfPickup ? 'Self Pickup' : 'Home Delivery';
+
+  String get subtotalText => _formatDisplayNumber(subtotal);
 }
 
 class PendingOrderItemModel {
   final int id;
   final int orderId;
   final int productId;
-
-  final num discountUnitPrice;
-  final num offerUnitPrice;
   final int quantity;
-  final num totalPrice;
-
-  final String createdAt;
-  final String updatedAt;
-
+  final num unitPrice;
+  final num unitTotal;
   final DrugItemModel? product;
 
   const PendingOrderItemModel({
     required this.id,
     required this.orderId,
     required this.productId,
-    required this.discountUnitPrice,
-    required this.offerUnitPrice,
     required this.quantity,
-    required this.totalPrice,
-    required this.createdAt,
-    required this.updatedAt,
+    required this.unitPrice,
+    required this.unitTotal,
     required this.product,
   });
 
-  static int _parseInt(dynamic v) {
-    if (v == null) return 0;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? 0;
-  }
-
-  static num _parseNum(dynamic v) {
-    if (v == null) return 0;
-    if (v is num) return v;
-    return num.tryParse(v.toString()) ?? 0;
-  }
-
   factory PendingOrderItemModel.fromJson(Map<String, dynamic> json) {
     final rawProduct = json['product'];
-
-    final DrugItemModel? product = (rawProduct is Map<String, dynamic>)
-        ? DrugItemModel.fromJson(rawProduct)
-        : null;
 
     return PendingOrderItemModel(
       id: _parseInt(json['id']),
       orderId: _parseInt(json['order_id']),
       productId: _parseInt(json['product_id']),
-      discountUnitPrice: _parseNum(
-        json['discount_unit_price'] ?? json['unit_price'],
-      ),
-      offerUnitPrice: _parseNum(
-        json['offer_unit_price'] ?? json['unit_price'],
-      ),
       quantity: _parseInt(json['quantity']),
-      totalPrice: _parseNum(json['total_price'] ?? json['unit_total']),
-      createdAt: (json['created_at'] ?? '').toString(),
-      updatedAt: (json['updated_at'] ?? '').toString(),
-      product: product,
+      unitPrice: _parseNum(json['unit_price']),
+      unitTotal: _parseNum(json['unit_total']),
+      product: rawProduct is Map<String, dynamic>
+          ? DrugItemModel.fromJson(rawProduct)
+          : null,
     );
   }
+
+  String get unitPriceText => _formatDisplayNumber(unitPrice);
+  String get unitTotalText => _formatDisplayNumber(unitTotal);
 }
+
+int _parseInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString()) ?? 0;
+}
+
+num _parseNum(dynamic value) {
+  if (value == null) return 0;
+  if (value is num) return value;
+  return num.tryParse(value.toString()) ?? 0;
+}
+
+String _parseString(dynamic value) => (value ?? '').toString();
+
+String _formatDisplayNumber(dynamic value) => formatMoney(value);

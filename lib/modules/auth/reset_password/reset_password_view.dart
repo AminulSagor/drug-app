@@ -16,7 +16,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
       body: Stack(
         children: [
           const AuthBackground(
-            assetPath: 'assets/auth_bg.jpg', // ✅ change if needed
+            assetPath: 'assets/auth_bg.jpg',
             fit: BoxFit.cover,
           ),
 
@@ -136,7 +136,28 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
                         );
                       }),
 
-                      140.h.verticalSpace,
+                      120.h.verticalSpace,
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: InkWell(
+                          onTap: controller.goToLogin,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 4.w,
+                              vertical: 6.h,
+                            ),
+                            child: Text(
+                              'Back to login',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
