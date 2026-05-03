@@ -43,7 +43,7 @@ class OrderDetailsDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '# ${order.orderNo}   \৳ ${order.subtotalText}  (${order.collectLabel})',
+                      '# ${order.orderNo}   \৳ ${order.calculatedSubtotalText}  (${order.collectLabel})',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -167,13 +167,16 @@ class OrderDetailsDialog extends StatelessWidget {
                 Expanded(
                   child: Obx(() {
                     final isClearing = c.clearingOrderIds.contains(order.id);
+                    final isAllowedPicked = order.isAllowedPicked == 1;
 
                     return Container(
                       margin: EdgeInsets.fromLTRB(6.w, 12.h, 12.w, 12.h),
                       height: 46.h,
-                      color: isClearing ? Colors.grey : Colors.green,
+                      color: isClearing || !isAllowedPicked
+                          ? Colors.grey
+                          : Colors.green,
                       child: TextButton(
-                        onPressed: isClearing
+                        onPressed: isClearing || !isAllowedPicked
                             ? null
                             : () => c.clearOrder(orderId: order.id),
                         child: isClearing

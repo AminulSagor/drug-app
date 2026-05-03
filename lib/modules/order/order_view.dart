@@ -404,7 +404,7 @@ class _OrderRow extends StatelessWidget {
                 ),
                 4.w.horizontalSpace,
                 Text(
-                  '\৳ ${order.subtotalText}',
+                  '\৳ ${order.calculatedSubtotalText}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w400,
